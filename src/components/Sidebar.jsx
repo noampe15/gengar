@@ -82,9 +82,9 @@ export default function Sidebar({ page, setPage }) {
   const itemRefs = useRef([])
 
   const navItems = [
-    { id: "overview", label: "Overview", icon: LayoutGrid },
-    { id: "remediation", label: "Remediation", icon: Wrench },
-    { id: "resources", label: "Resources", icon: Box },
+    { id: "overview", label: "Contract", icon: LayoutGrid },
+    { id: "remediation", label: "Hotfixes", icon: Wrench },
+    { id: "resources", label: "Telemetry", icon: Box },
     { id: "settings", label: "Settings", icon: SlidersHorizontal },
   ]
 

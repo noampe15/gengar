@@ -1,140 +1,99 @@
 import { useState } from "react"
-import { DETECTION_ISSUES, TOPOLOGY_NODES, issuesForTopology } from "../detection"
+import { DETECTION_ISSUES, issuesForTopology } from "../detection"
 import BacktestPanel from "./BacktestPanel"
+import MatchVolumeChart from "./MatchVolumeChart"
+import PipelineFlow from "./PipelineFlow"
 import SchemaDiff from "./SchemaDiff"
 
-const TABS = [
+const VIEWS = [
   { id: "schema", label: "Parser & Schema Drift" },
   { id: "rules", label: "Detection Rule Health" },
-  { id: "backtest", label: "AI Agent Backtesting & Guardrails" },
+  { id: "backtest", label: "AI Agent Backtesting" },
 ]
 
-const PRIORITY_BADGE = {
-  Critical: "bg-red-50 text-red-700 border border-red-200",
-  High: "bg-amber-50 text-amber-700 border border-amber-200",
-  Medium: "bg-amber-50 text-amber-700 border border-amber-200",
+const SEVERITY = {
+  Critical: "bg-red-50 text-red-700 border-red-200",
+  High: "bg-amber-50 text-amber-800 border-amber-200",
+  Medium: "bg-slate-50 text-slate-700 border-slate-200",
 }
 
-const KPIS = [
-  {
-    label: "Detection Coverage Index",
-    value: "84.2%",
-    pill: "−3.4% drift impact",
-    pillClass: "bg-red-50 text-red-700 border border-red-200",
-  },
-  {
-    label: "Active Pipeline Drift Events",
-    value: "3 Parsers Degraded",
-    pill: "Degraded",
-    pillClass: "bg-amber-50 text-amber-700 border border-amber-200",
-  },
-  {
-    label: "Silent Zero-Match Rules",
-    value: "4 Critical Blind Spots",
-    pill: "Critical",
-    pillClass: "bg-red-50 text-red-700 border border-red-200",
-  },
-  {
-    label: "Detection-as-Code Sync",
-    value: "2 Hotfix PRs Pending",
-    pill: "Pending",
-    pillClass: "bg-indigo-50 text-indigo-700 border border-indigo-200",
-  },
-]
+const VOLUME = {
+  Critical: "text-red-700",
+  High: "text-amber-800",
+  Medium: "text-slate-800",
+}
 
-function Lineage({ text }) {
-  const parts = text.split(/\s*→\s*/)
-  return (
-    <span className="inline-flex flex-wrap items-center gap-1 text-[12px] text-slate-600">
-      {parts.map((part, index) => (
-        <span key={`${part}-${index}`} className="inline-flex items-center gap-1">
-          {index > 0 ? <span className="text-slate-300">──&gt;</span> : null}
-          <span>{part}</span>
-        </span>
-      ))}
-    </span>
-  )
+const NODE_LABEL = {
+  telemetry: "Telemetry Sources",
+  pipeline: "Cribl Stream v2.4",
+  siem: "Microsoft Sentinel / Snowflake",
+  soar: "Torq SOAR",
 }
 
 export default function DetectionControlPlane({ onOpenIssue }) {
-  const [tab, setTab] = useState("rules")
+  const [view, setView] = useState("schema")
   const [nodeId, setNodeId] = useState("")
-  const issues = issuesForTopology(nodeId)
-  const active = TOPOLOGY_NODES.find((node) => node.id === nodeId)
-
-  function selectNode(id) {
-    setNodeId((current) => (current === id ? "" : id))
-    setTab("rules")
-  }
+  const [selectedId, setSelectedId] = useState("schema-drift")
+  const issues = DETECTION_ISSUES
+  const downstream = nodeId ? new Set(issuesForTopology(nodeId).map((issue) => issue.id)) : null
+  const selected = issues.find((issue) => issue.id === selectedId) ?? issues[0]
+  const silent = issues.filter((issue) => issue.volume === "0%")
 
   return (
-    <div className="space-y-4">
-      <section className="rounded-2xl border border-slate-200/80 bg-white px-4 py-3 shadow-sm">
-        <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
-          {TOPOLOGY_NODES.map((node, index) => {
-            const selected = nodeId === node.id
-            const count = issuesForTopology(node.id).length
-            return (
-              <div key={node.id} className="flex min-w-0 flex-1 items-center gap-2">
-                <button
-                  type="button"
-                  aria-pressed={selected}
-                  onClick={() => selectNode(node.id)}
-                  className={`min-w-0 flex-1 rounded-xl border px-3 py-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 ${
-                    selected
-                      ? "border-indigo-300 bg-indigo-50"
-                      : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
-                  }`}
-                >
-                  <span className="block truncate text-[12.5px] font-semibold text-slate-900">{node.label}</span>
-                  <span className="mt-0.5 block font-mono text-[11px] text-slate-400">
-                    {count} {count === 1 ? "rule" : "rules"}
-                  </span>
-                </button>
-                {index < TOPOLOGY_NODES.length - 1 ? (
-                  <span className="hidden shrink-0 font-mono text-[12px] text-slate-300 lg:inline" aria-hidden="true">
-                    ──&gt;
-                  </span>
-                ) : null}
-              </div>
-            )
-          })}
+    <div className="space-y-3">
+      <section className="flex flex-wrap items-end justify-between gap-4">
+        <div className="max-w-3xl">
+          <p className="font-mono text-[12px] font-medium uppercase tracking-[0.16em] text-slate-400">Since Falcon v7.14 · 14:10 UTC</p>
+          <h2 className="mt-1 text-[22px] font-semibold tracking-tight text-slate-900">
+            Coverage is 84.2
+            <span className="ml-2 font-mono text-[15px] font-medium text-red-700">−3.4</span>
+          </h2>
+          <p className="mt-1 max-w-2xl text-[13.5px] leading-relaxed text-slate-600">
+            {silent.length === 0
+              ? "No rule is at zero match volume. "
+              : silent.length === 1
+                ? "One rule matches nothing. "
+                : `${silent.length} rules match nothing. `}
+            Two hotfixes are blocked on Detection Engineering Lead. Ship nothing that has not held a 30-day replay.
+          </p>
         </div>
-        <p className="mt-2 text-[12px] text-slate-400">
-          {active
-            ? `Showing rules affected by ${active.label}.`
-            : "Select a supply-chain node to filter the detection contract."}
-        </p>
+        <dl className="grid grid-cols-3 gap-px overflow-hidden rounded-xl border border-slate-200/80 bg-slate-200/80 shadow-sm">
+          {[
+            ["Parsers", "3", "degraded"],
+            ["Blind", "4", "techniques"],
+            ["PRs", "2", "waiting"],
+          ].map(([label, value, note]) => (
+            <div key={label} className="bg-white px-4 py-2.5">
+              <dt className="text-[11px] font-medium text-slate-400">{label}</dt>
+              <dd className="font-mono text-[18px] font-semibold leading-none text-slate-900">{value}</dd>
+              <dd className="mt-1 text-[11px] text-slate-500">{note}</dd>
+            </div>
+          ))}
+        </dl>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {KPIS.map((card) => (
-          <article key={card.label} className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
-            <p className="text-[12px] font-medium text-slate-400">{card.label}</p>
-            <p className="mt-2 font-mono text-[26px] font-semibold leading-none tracking-tight text-slate-900">{card.value}</p>
-            <span className={`mt-3 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${card.pillClass}`}>
-              {card.pill}
-            </span>
-          </article>
-        ))}
-      </section>
-
-      <section className="rounded-2xl border border-slate-200/80 bg-white shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
-          <div role="tablist" aria-label="Detection engineering views" className="flex flex-wrap gap-1">
-            {TABS.map((item) => {
-              const selected = tab === item.id
+      <section className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm">
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-2.5">
+          <div>
+            <h3 className="text-[14px] font-semibold text-slate-900">{VIEWS.find((item) => item.id === view)?.label}</h3>
+            <p className="text-[12px] text-slate-500">
+              {nodeId
+                ? `${downstream?.size ?? 0} ${(downstream?.size ?? 0) === 1 ? "rule" : "rules"} downstream of ${NODE_LABEL[nodeId] ?? "this hop"}`
+                : `${issues.length} rules on the production data plane`}
+            </p>
+          </div>
+          <div role="tablist" aria-label="Contract views" className="flex gap-4">
+            {VIEWS.map((item) => {
+              const selected = view === item.id
               return (
                 <button
                   key={item.id}
                   type="button"
                   role="tab"
                   aria-selected={selected}
-                  onClick={() => setTab(item.id)}
-                  className={`rounded-full border px-3 py-1.5 text-[12.5px] font-semibold outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 ${
-                    selected
-                      ? "border-slate-900 bg-slate-900 text-white"
-                      : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                  onClick={() => setView(item.id)}
+                  className={`border-b-2 pb-1 text-[12.5px] font-semibold outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 ${
+                    selected ? "border-slate-900 text-slate-900" : "border-transparent text-slate-400 hover:text-slate-700"
                   }`}
                 >
                   {item.label}
@@ -142,98 +101,84 @@ export default function DetectionControlPlane({ onOpenIssue }) {
               )
             })}
           </div>
-          {active ? (
-            <button
-              type="button"
-              onClick={() => setNodeId("")}
-              className="text-[12px] font-semibold text-indigo-700 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-indigo-400"
-            >
-              Clear filter
-            </button>
-          ) : (
-            <p className="text-[12px] text-slate-400">{DETECTION_ISSUES.length} production rules</p>
-          )}
-        </div>
+        </header>
 
-        {tab === "schema" ? (
-          <div className="space-y-3 p-4">
-            {issues.map((issue) => (
-              <article key={issue.id} className="rounded-xl border border-slate-200 p-3">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div>
-                    <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${PRIORITY_BADGE[issue.priority]}`}>
-                      {issue.priority}
-                    </span>
-                    <h3 className="mt-2 text-[14px] font-semibold text-slate-900">{issue.failureClass}</h3>
-                    <p className="mt-1 text-[13px] text-slate-600">{issue.rootCause}</p>
+        {view === "schema" ? (
+          <div className="space-y-4 p-4">
+            <PipelineFlow nodeId={nodeId} onSelect={(id) => setNodeId((current) => idSafe(current, id))} />
+            <IssueTable
+              issues={issues}
+              downstream={downstream}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              onOpenIssue={onOpenIssue}
+            />
+            {issues.map((issue) => {
+              const marked = downstream?.has(issue.id)
+              return (
+                <article
+                  key={issue.id}
+                  className={`rounded-xl border ${marked ? "border-amber-300 bg-amber-50/40" : "border-slate-200"} ${downstream && !marked ? "opacity-40" : ""}`}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 px-3 py-3">
+                    <div>
+                      <p className="font-mono text-[11px] text-slate-400">{issue.technique}</p>
+                      <h4 className="mt-0.5 text-[14px] font-semibold text-slate-900">{issue.contract}</h4>
+                      <p className="mt-1 text-[13px] text-slate-600">{issue.rootCause}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onOpenIssue(issue)}
+                      className="text-[12px] font-semibold text-indigo-700 outline-none hover:underline"
+                    >
+                      Open in agent
+                    </button>
                   </div>
+                  <div className="p-3">
+                    <SchemaDiff panels={issue.panels} branch={issue.branch} />
+                  </div>
+                </article>
+              )
+            })}
+          </div>
+        ) : null}
+
+        {view === "rules" ? (
+          <div className="space-y-4 p-4">
+            <MatchVolumeChart issue={selected} />
+            <IssueTable
+              issues={issues}
+              downstream={downstream}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              onOpenIssue={onOpenIssue}
+            />
+          </div>
+        ) : null}
+
+        {view === "backtest" ? (
+          <div className="space-y-4 p-4">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+              <p className="text-[13px] font-semibold text-slate-900">Ship gate</p>
+              <ul className="mt-2 space-y-1 text-[12.5px] text-slate-600">
+                <li>Replay the repaired query on the last 30 days before a pull request opens.</li>
+                <li>True positive recall must hold. Noise must fall.</li>
+                <li>Detection Engineering Lead is a required reviewer. Auto-merge stays off.</li>
+              </ul>
+            </div>
+            {issues.map((issue) => (
+              <div key={issue.id}>
+                <div className="mb-2 flex items-baseline justify-between gap-3">
                   <button
                     type="button"
                     onClick={() => onOpenIssue(issue)}
-                    className="inline-flex h-8 items-center rounded-lg border border-slate-200 px-3 text-[12px] font-semibold text-slate-800 outline-none hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-indigo-400"
+                    className="text-left text-[13px] font-semibold text-slate-900 outline-none hover:text-indigo-700"
                   >
-                    Open agent
+                    {issue.title}
                   </button>
+                  <span className="font-mono text-[11px] text-slate-400">{issue.branch}</span>
                 </div>
-                <SchemaDiff panels={issue.panels} branch={issue.branch} />
-              </article>
-            ))}
-            {issues.length === 0 ? <p className="text-[13px] text-slate-500">No schema mutations on this node.</p> : null}
-          </div>
-        ) : null}
-
-        {tab === "rules" ? (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[920px] text-left">
-              <thead>
-                <tr className="border-b border-slate-100 text-[11px] font-medium uppercase tracking-wide text-slate-400">
-                  <th className="px-4 py-3 font-medium">Rule</th>
-                  <th className="px-4 py-3 font-medium">Lineage</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">Root cause</th>
-                </tr>
-              </thead>
-              <tbody>
-                {issues.map((issue) => (
-                  <tr
-                    key={issue.id}
-                    className="cursor-pointer border-b border-slate-100 last:border-0 hover:bg-slate-50"
-                    onClick={() => onOpenIssue(issue)}
-                  >
-                    <td className="px-4 py-3 align-top">
-                      <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${PRIORITY_BADGE[issue.priority]}`}>
-                        {issue.priority} · {issue.failureClass}
-                      </span>
-                      <p className="mt-1.5 text-[13px] font-semibold text-slate-900">{issue.title}</p>
-                    </td>
-                    <td className="px-4 py-3 align-top">
-                      <Lineage text={issue.lineage} />
-                    </td>
-                    <td className="px-4 py-3 align-top text-[13px] text-slate-700">{issue.impact}</td>
-                    <td className="px-4 py-3 align-top text-[13px] text-slate-600">{issue.rootCause}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {issues.length === 0 ? <p className="px-4 py-8 text-[13px] text-slate-500">No detection rules are bound to this node.</p> : null}
-          </div>
-        ) : null}
-
-        {tab === "backtest" ? (
-          <div className="space-y-3 p-4">
-            <p className="text-[13px] text-slate-600">
-              Replay each repaired query against 30 days of historical telemetry before a Detection-as-Code pull request is opened.
-            </p>
-            {issues.map((issue) => (
-              <div key={issue.id}>
-                <button
-                  type="button"
-                  onClick={() => onOpenIssue(issue)}
-                  className="mb-2 text-left text-[13px] font-semibold text-slate-900 outline-none hover:text-indigo-700 focus-visible:ring-2 focus-visible:ring-indigo-400"
-                >
-                  {issue.title}
-                </button>
-                <BacktestPanel title={issue.technique} />
+                <BacktestPanel title={`${issue.owner} · ${issue.age}`} />
               </div>
             ))}
           </div>
@@ -241,4 +186,84 @@ export default function DetectionControlPlane({ onOpenIssue }) {
       </section>
     </div>
   )
+}
+
+function IssueTable({ issues, downstream, selectedId, onSelect, onOpenIssue }) {
+  return (
+    <div className="overflow-x-auto rounded-xl border border-slate-200">
+      <table className="w-full min-w-[980px] text-left">
+        <thead>
+          <tr className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+            <th className="px-4 py-2 font-medium">Detection</th>
+            <th className="px-4 py-2 font-medium">Volume</th>
+            <th className="px-4 py-2 font-medium">Broken contract</th>
+            <th className="px-4 py-2 font-medium">Age</th>
+            <th className="px-4 py-2 font-medium">Owner</th>
+            <th className="px-4 py-2 text-right font-medium"> </th>
+          </tr>
+        </thead>
+        <tbody>
+          {issues.map((issue) => {
+            const marked = downstream?.has(issue.id)
+            const picked = issue.id === selectedId
+            return (
+              <tr
+                key={issue.id}
+                onClick={() => onSelect(issue.id)}
+                aria-selected={picked}
+                className={`cursor-pointer border-t border-slate-100 ${
+                  picked ? "bg-indigo-50/70" : marked ? "bg-amber-50/80" : "hover:bg-slate-50/80"
+                } ${downstream && !marked ? "opacity-40" : ""}`}
+              >
+                <td className="px-4 py-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`rounded-full border px-1.5 py-0.5 text-[10px] font-semibold ${SEVERITY[issue.priority]}`}>
+                      {issue.priority}
+                    </span>
+                    <span className="font-mono text-[11px] text-slate-400">{issue.technique}</span>
+                    {marked ? (
+                      <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
+                        Downstream
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="mt-1 text-[13px] font-semibold text-slate-900">{issue.title}</p>
+                  <p className="mt-0.5 text-[12px] text-slate-500">{issue.failureClass}</p>
+                </td>
+                <td className="px-4 py-3">
+                  <p className={`font-mono text-[16px] font-semibold leading-none ${VOLUME[issue.priority]}`}>{issue.volume}</p>
+                  <p className="mt-1 text-[11px] text-slate-500">{issue.volumeNote}</p>
+                </td>
+                <td className="max-w-[280px] px-4 py-3">
+                  <p className="font-mono text-[12px] text-slate-800">{issue.contract}</p>
+                  <p className="mt-1 text-[12px] leading-snug text-slate-500">{issue.rootCause}</p>
+                </td>
+                <td className="px-4 py-3 font-mono text-[12px] text-slate-700">{issue.age}</td>
+                <td className="px-4 py-3 text-[12.5px] text-slate-700">{issue.owner}</td>
+                <td className="px-4 py-3 text-right">
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      onOpenIssue(issue)
+                    }}
+                    className="inline-flex h-8 items-center rounded-lg bg-slate-900 px-3 text-[12px] font-semibold text-white outline-none hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-indigo-400"
+                  >
+                    Review hotfix
+                  </button>
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+      {issues.length === 0 ? (
+        <p className="px-4 py-8 text-[13px] text-slate-500">Nothing on this hop is breaking a detection.</p>
+      ) : null}
+    </div>
+  )
+}
+
+function idSafe(current, id) {
+  return current === id ? "" : id
 }

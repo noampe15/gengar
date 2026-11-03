@@ -12,7 +12,7 @@ export default function CopilotBar({
   placeholder,
 }) {
   const [value, setValue] = useState("")
-  const name = "AI Assistant"
+  const name = "Detection engineer"
 
   function submit(query) {
     const q = (query ?? value).trim()
@@ -39,7 +39,7 @@ export default function CopilotBar({
             onChange={(e) => setValue(e.target.value)}
             placeholder={
               placeholder ??
-              "AI Assistant — ask in plain English, e.g. Produce posture report"
+              "Which rules went silent after the Falcon v7.14 pack?"
             }
             className="h-9 min-w-0 flex-1 bg-transparent text-[14px] text-slate-800 outline-none placeholder:text-slate-400"
             aria-label={`${name} search`}
@@ -61,7 +61,7 @@ export default function CopilotBar({
             type="submit"
             className="h-9 shrink-0 rounded-full bg-[#6d5cff] px-4 text-[13px] font-semibold text-white hover:bg-[#5b4cf0]"
           >
-            Hunt
+            Ask
           </button>
         </div>
       </form>

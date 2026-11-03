@@ -61,7 +61,22 @@ body {
 button:focus-visible,
 [role="dialog"]:focus-visible,
 a:focus-visible,
-select:focus-visible {
-  outline: 2px solid #6d5cff;
+select:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid #4f46e5;
   outline-offset: 2px;
+}
+
+@keyframes detpulse-load {
+  from {
+    width: 6%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+.detpulse-load {
+  width: 6%;
+  animation: detpulse-load 1.2s linear forwards;
 }

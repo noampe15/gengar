@@ -48,19 +48,55 @@ export default function BacktestPanel({ title, buttonLabel = "Run 30-Day Histori
           </div>
         </div>
       ) : null}
-      {phase === "done" ? (
-        <dl className="mt-3 grid gap-2 sm:grid-cols-2">
-          {[
-            ["True Positive Recall", "100%"],
-            ["Noise Reduction", "−74%"],
-          ].map(([label, value]) => (
-            <div key={label} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-              <dt className="text-[11px] font-medium text-slate-500">{label}</dt>
-              <dd className="mt-1 text-[18px] font-semibold tracking-tight text-slate-900">{value}</dd>
-            </div>
-          ))}
-        </dl>
-      ) : null}
+      {phase === "done" ? <ImpactMatrix /> : null}
     </section>
+  )
+}
+
+function ImpactMatrix() {
+  const rows = [
+    {
+      label: "True positive recall",
+      value: "100% verified",
+      width: "100%",
+      bar: "bg-emerald-500",
+      ink: "text-emerald-700",
+      note: "Every historical true positive still matches the repaired query.",
+    },
+    {
+      label: "False positive noise",
+      value: "−74%",
+      width: "74%",
+      bar: "bg-indigo-500",
+      ink: "text-indigo-700",
+      note: "Noise reduction against the 30-day production query.",
+    },
+    {
+      label: "SIEM query scan cost",
+      value: "−12% compute",
+      width: "12%",
+      bar: "bg-amber-500",
+      ink: "text-amber-800",
+      note: "Less data scanned once the predicate matches the field that actually arrives.",
+    },
+  ]
+  return (
+    <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3" role="group" aria-label="30-day replay impact">
+      <p className="text-[12px] font-semibold text-slate-900">Replay impact</p>
+      <ul className="mt-3 space-y-3">
+        {rows.map((row) => (
+          <li key={row.label}>
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="text-[12px] text-slate-600">{row.label}</span>
+              <span className={`font-mono text-[13px] font-semibold ${row.ink}`}>{row.value}</span>
+            </div>
+            <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-white ring-1 ring-slate-200">
+              <div className={`h-full rounded-full ${row.bar}`} style={{ width: row.width }} />
+            </div>
+            <p className="mt-1 text-[11px] leading-snug text-slate-500">{row.note}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }
