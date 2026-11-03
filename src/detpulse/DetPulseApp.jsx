@@ -3,6 +3,7 @@ import DetectionsView from "./DetectionsView"
 import Drawer from "./Drawer"
 import Overview from "./Overview"
 import ParsersView from "./ParsersView"
+import SupplyChainView from "./SupplyChainView"
 import { PulseProvider, usePulse } from "./PulseContext"
 import TopBar, { SideNav } from "./TopBar"
 
@@ -13,11 +14,17 @@ function Shell() {
       <SideNav />
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar />
-        <main className="flex-1 overflow-y-auto px-4 py-5 md:px-6">
-          {view === "overview" ? <Overview /> : null}
-          {view === "detections" ? <DetectionsView /> : null}
-          {view === "parsers" ? <ParsersView /> : null}
-          {view === "automations" ? <AutomationsView /> : null}
+        <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 py-3 md:px-5">
+          {view === "overview" ? (
+            <Overview />
+          ) : (
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              {view === "supply" ? <SupplyChainView /> : null}
+              {view === "detections" ? <DetectionsView /> : null}
+              {view === "parsers" ? <ParsersView /> : null}
+              {view === "automations" ? <AutomationsView /> : null}
+            </div>
+          )}
         </main>
       </div>
       <Drawer />

@@ -1,4 +1,8 @@
 import { PLAYBOOKS } from "./model"
+
+function highlightNull(text) {
+  return text.split("null").flatMap((part, index) => (index === 0 ? [part] : [<span key={index} className="text-red-300">null</span>, part]))
+}
 import { usePulse } from "./PulseContext"
 import { Card, CodeBlock, StatusPill } from "./ui"
 
@@ -12,8 +16,8 @@ export default function AutomationsView() {
       </div>
       <div className="grid gap-3">
         {PLAYBOOKS.map((playbook) => {
-          const healed = playbook.ruleId && pulse.patched[playbook.ruleId] && playbook.id === "isolate"
-          const broken = playbook.id === "isolate" && !healed
+          const healed = Boolean(playbook.error && playbook.ruleId && pulse.patched[playbook.ruleId])
+          const broken = Boolean(playbook.error) && !healed
           return (
             <Card key={playbook.id} className="p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -44,21 +48,12 @@ export default function AutomationsView() {
                     </div>
                     <div>
                       <p className="mb-1.5 text-[11px] font-medium text-slate-400">Actual Sentinel alert output</p>
-                      <CodeBlock>
-                        {`{
-  "payload": {
-    "entity": { "DeviceId": `}
-                        <span className="text-red-300">null</span>
-                        {`, "Hostname": "win-04" },
-    "action": "isolate-host"
-  }
-}`}
-                      </CodeBlock>
+                      <CodeBlock>{highlightNull(playbook.actual)}</CodeBlock>
                     </div>
                   </div>
                 </div>
               ) : (
-                <p className="mt-3 text-[12.5px] text-slate-600">{healed ? "DeviceId is projected again. isolate-host accepts the payload." : playbook.note}</p>
+                <p className="mt-3 text-[12.5px] text-slate-600">{healed ? playbook.healed : playbook.note}</p>
               )}
             </Card>
           )

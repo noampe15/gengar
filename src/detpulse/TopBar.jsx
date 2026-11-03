@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react"
-import { GitBranch, LayoutDashboard, Menu, ShieldAlert, Workflow } from "lucide-react"
+import { GitBranch, LayoutDashboard, Menu, ShieldAlert, Waypoints, Workflow } from "lucide-react"
 import { usePulse } from "./PulseContext"
 
 const NAV_ICONS = {
   overview: LayoutDashboard,
+  supply: Waypoints,
   detections: ShieldAlert,
   parsers: GitBranch,
   automations: Workflow,
@@ -31,10 +32,11 @@ function countLabel(count, singular, plural) {
 function useNavItems() {
   const pulse = usePulse()
   return [
-    { id: "overview", label: "Overview", hint: "Command Center", badge: "" },
-    { id: "detections", label: "Detections & Rule Health", badge: countLabel(pulse.degradedLeft.length, "Degraded", "Degraded") },
-    { id: "parsers", label: "Parsers & Schema Lineage", badge: countLabel(pulse.parserDrift, "Drift Event", "Drift Events") },
-    { id: "automations", label: "Automations & SOAR", badge: countLabel(pulse.brokenWebhooks, "Broken Webhook", "Broken Webhooks") },
+    { id: "overview", label: "Overview", hint: "Command Center", badge: "", count: pulse.pending },
+    { id: "supply", label: "Live Data-to-Detection Supply Chain", badge: countLabel(pulse.degradedHops, "Degraded Hop", "Degraded Hops"), count: pulse.degradedHops },
+    { id: "detections", label: "Detections & Rule Health", badge: countLabel(pulse.degradedLeft.length, "Degraded", "Degraded"), count: pulse.degradedLeft.length },
+    { id: "parsers", label: "Parsers & Schema Lineage", badge: countLabel(pulse.parserDrift, "Drift Event", "Drift Events"), count: pulse.parserDrift },
+    { id: "automations", label: "Automations & SOAR", badge: countLabel(pulse.brokenWebhooks, "Broken Webhook", "Broken Webhooks"), count: pulse.brokenWebhooks },
   ]
 }
 
@@ -78,7 +80,7 @@ export function SideNav() {
               aria-current={active ? "page" : undefined}
               title={collapsed ? tip : undefined}
               onClick={() => pulse.dispatch({ type: "view", view: tab.id })}
-              className={`relative rounded-lg border text-left ${
+              className={`relative overflow-visible rounded-lg border text-left ${
                 collapsed ? "grid size-10 place-items-center" : "flex items-start gap-2.5 px-3 py-2.5"
               } ${
                 active
@@ -86,11 +88,16 @@ export function SideNav() {
                   : "border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900"
               }`}
             >
-              <Icon className={`size-4 shrink-0 ${collapsed ? "" : "mt-0.5"}`} />
-              {collapsed ? (
-                tab.badge ? <span className="absolute top-1.5 right-1.5 size-1.5 rounded-full bg-indigo-500" /> : null
-              ) : (
-                <span className="min-w-0">
+              <span className={`shrink-0 ${collapsed ? "" : "mt-0.5"}`}>
+                <Icon className="size-4" />
+              </span>
+              {tab.count > 0 ? (
+                <span className={`pointer-events-none absolute flex items-center justify-center rounded-full bg-rose-600 font-semibold leading-none text-white ring-2 ring-white ${collapsed ? "top-0 right-0 h-3 min-w-3 text-[9px]" : "top-2 right-2 h-4 min-w-4 px-1 text-[10px]"}`}>
+                  {tab.count}
+                </span>
+              ) : null}
+              {collapsed ? null : (
+                <span className={`min-w-0 ${tab.count > 0 ? "pr-5" : ""}`}>
                   <span className="block text-[13px] font-semibold text-slate-900">{tab.label}</span>
                   {tab.hint ? <span className="mt-0.5 block text-[11px] font-normal text-slate-400">{tab.hint}</span> : null}
                   {tab.badge ? (
@@ -130,10 +137,6 @@ export default function TopBar() {
           <span className="font-normal text-slate-400"> / Detection Resilience Control Plane</span>
         </p>
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-600">
-            <span className="size-1.5 rounded-full bg-emerald-500" />
-            Env: Core-Prod-US-East
-          </span>
           <div className="relative" ref={policyRef}>
             <button
               type="button"

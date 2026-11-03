@@ -43,6 +43,17 @@ body {
   animation: hunt-shimmer 1.05s ease-in-out infinite;
 }
 
+@keyframes detpulse-flow {
+  to {
+    stroke-dashoffset: -22;
+  }
+}
+
+.detpulse-flow {
+  stroke-dasharray: 6 5;
+  animation: detpulse-flow 1.1s linear infinite;
+}
+
 @keyframes drawer-in {
   from {
     transform: translateX(24px);

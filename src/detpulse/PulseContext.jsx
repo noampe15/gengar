@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useReducer } from "react"
-import { RULES, canMerge } from "./model"
+import { NODES, RULES, canMerge } from "./model"
 
 const PulseContext = createContext(null)
 
@@ -8,6 +8,7 @@ const INITIAL = {
   policyOpen: false,
   policy: { schema: "manual", lookup: "backtest", soar: "dual" },
   nodeId: "",
+  stageId: "",
   patched: {},
   drawer: null,
 }
@@ -23,17 +24,20 @@ function reducer(state, action) {
     case "policy":
       return { ...state, policy: { ...state.policy, [action.key]: action.value } }
     case "node":
-      return { ...state, nodeId: state.nodeId === action.id ? "" : action.id }
+      return { ...state, nodeId: state.nodeId === action.id ? "" : action.id, stageId: "" }
+    case "stage":
+      return { ...state, stageId: state.stageId === action.id ? "" : action.id, nodeId: "" }
     case "clear-node":
-      return { ...state, nodeId: "" }
+      return { ...state, nodeId: "", stageId: "" }
     case "open": {
-      if (state.drawer?.ruleId === action.id && !state.patched[action.id]) return state
+      if (state.drawer?.mode !== "author" && state.drawer?.ruleId === action.id && !state.patched[action.id]) return state
       const rule = RULES.find((item) => item.id === action.id)
       if (!rule?.degraded && !state.patched[action.id]) return state
       return {
         ...state,
         policyOpen: false,
         drawer: {
+          mode: "repair",
           ruleId: action.id,
           hunkBApproved: false,
           justification: "",
@@ -46,6 +50,31 @@ function reducer(state, action) {
           copied: false,
         },
       }
+    }
+    case "author":
+      return {
+        ...state,
+        policyOpen: false,
+        drawer: {
+          mode: "author",
+          gapId: action.id,
+          ruleId: action.id,
+          hunkBApproved: false,
+          justification: "",
+          coachOpen: false,
+          constraintSaved: false,
+          resynth: false,
+          pendingCode: "",
+          hunkBCode: "",
+          replay: "running",
+          copied: false,
+          deployed: false,
+        },
+      }
+    case "deploy-author": {
+      const gate = state.drawer?.mode === "author" && state.drawer.replay === "done" && state.drawer.hunkBApproved && state.drawer.justification
+      if (!gate || state.drawer.deployed) return state
+      return { ...state, drawer: { ...state.drawer, deployed: true } }
     }
     case "close":
       return { ...state, drawer: null }
@@ -125,11 +154,12 @@ export function PulseProvider({ children }) {
 
   const derived = useMemo(() => {
     const patchedCount = Object.keys(state.patched).length
+    const degradedAll = RULES.filter((rule) => rule.degraded).length
     const degradedLeft = RULES.filter((rule) => rule.degraded && !state.patched[rule.id])
     const schemaBreaks = degradedLeft.filter((rule) => rule.schemaBreak).length
     const gaps = degradedLeft.filter((rule) => rule.gap).map((rule) => rule.technique)
-    const drs = Math.round((78.4 + patchedCount * 2.9) * 10) / 10
-    const drop = Math.round((11.6 - patchedCount * 2.9) * 10) / 10
+    const drop = degradedAll ? Math.round(((11.6 * degradedLeft.length) / degradedAll) * 10) / 10 : 0
+    const drs = Math.round((78.4 + (11.6 - drop)) * 10) / 10
     return {
       patchedCount,
       degradedLeft,
@@ -137,7 +167,8 @@ export function PulseProvider({ children }) {
       gaps,
       drs,
       drop,
-      pending: Math.max(0, 2 - patchedCount),
+      pending: degradedLeft.length,
+      degradedHops: NODES.filter((node) => node.tone !== "healthy" && degradedLeft.some((rule) => rule.nodes.includes(node.id))).length,
       parserDrift: RULES.filter((rule) => rule.parserDrift && !state.patched[rule.id]).length,
       brokenWebhooks: RULES.filter((rule) => rule.webhook && !state.patched[rule.id]).length,
       drsSeries: patchedCount ? [92, 90, 88, 84, 80, 78.4, drs] : [92, 90, 88, 86, 84, 81, 78.4],
