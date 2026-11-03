@@ -66,11 +66,9 @@ export function copilotBanner(query, rows, meta = {}) {
     const critical = units.filter((unit) => unit.severity === "Critical").length
     const top = units[0]
     const widest = clustered[0]
-    return `Global MSP posture: ${units.length} clients in scope. ${critical} sit at Critical systemic risk${
+    return `Enterprise Production // US-East: ${critical} critical pipeline findings${
       top ? `, led by ${top.name} at ${top.score}/100` : ""
-    }. Widest blast radius is “${widest?.issue ?? "unclustered"}”, affecting ${
-      widest?.tenantCount ?? 0
-    } tenants.`
+    }. Widest detection gap is “${widest?.issue ?? "unclustered"}”.`
   }
 
   if (!rows.length) {
@@ -82,12 +80,9 @@ export function copilotBanner(query, rows, meta = {}) {
   if (global) {
     const top = clustered[0] ?? rows[0]
     const n = clustered.length || rows.length
-    const tenantCount = top.tenantCount ?? 1
-    return `AI found ${n} clustered ${n === 1 ? "control gap" : "control gaps"} matching “${query}”. “${
+    return `AI found ${n} detection ${n === 1 ? "gap" : "gaps"} matching “${query}” in Enterprise Production // US-East. “${
       top.issue
-    }” is the lead finding — ${tenantCount} tenant${tenantCount === 1 ? "" : "s"} affected, MTTD-D ${top.rtoDelta}, ${
-      top.priority
-    } priority.`
+    }” is the lead finding — MTTD-D ${top.rtoDelta}, ${top.priority} priority.`
   }
 
   const top = rows[0]

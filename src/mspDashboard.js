@@ -125,7 +125,7 @@ export function tenantActivityInRange(tenant, rangeLabel) {
 }
 
 export const ESCALATION_REASONS = {
-  blast: "Blast radius exceeds auto-apply limit (>5 tenants)",
+  blast: "Blast radius exceeds auto-apply limit for the enterprise perimeter",
   confidence: "Confidence below 90% threshold",
   policy: "Policy requires approval: production data plane",
   rollback: "Previous auto-fix was rolled back",
@@ -289,7 +289,7 @@ export const mspQueueItems = [
     fixSummary: "Refresh trusted_corporate_subnets.csv from the WARP feed",
     owner: null,
     rollbackPlan: "Keep the outgoing certificate attached on a second listener until cutover health checks pass.",
-    rationale: "Six tenants share the same expired SAN. Auto-apply is blocked at >5 tenants even though confidence is 96%.",
+    rationale: "The same expired SAN is live on the enterprise perimeter. Auto-apply stays blocked even though confidence is 96%.",
     controls: [{ framework: "SOC 2", id: "CC6.7", name: "Transmission encryption" }],
     cluster: true,
   },
@@ -324,8 +324,8 @@ export const mspQueueItems = [
     category: "Identity Systems",
     fixSummary: "Restart the falcon.raw Kafka consumer",
     owner: null,
-    rollbackPlan: "Suspend the detector again if the tenant's security account hits API quotas.",
-    rationale: "Single-tenant, but detector state was changed out-of-band. Confidence is 81% until we confirm no quota conflict.",
+    rollbackPlan: "Suspend the detector again if the enterprise security account hits API quotas.",
+    rationale: "Detector state was changed out-of-band. Confidence is 81% until we confirm no quota conflict.",
     controls: [{ framework: "CIS AWS", id: "2.1.1", name: "GuardDuty enabled" }],
     cluster: true,
   },
@@ -343,7 +343,7 @@ export const mspQueueItems = [
     fixSummary: "Project DeviceId back into the Sentinel incident payload",
     owner: null,
     rollbackPlan: "Drop DeviceId from the analytics-rule projection again if the Torq webhook starts rejecting the extra field.",
-    rationale: "The isolate-host playbook is failing because DeviceId is missing from the incident payload. Auto-apply stops above 5 tenants.",
+    rationale: "The isolate-host playbook is failing because DeviceId is missing from the incident payload. Auto-apply stays blocked on the production data plane.",
     controls: [
       { framework: "SOC 2", id: "A1.2", name: "Recovery and backup" },
       { framework: "CIS AWS", id: "2.1.3", name: "CloudTrail collector session" },
@@ -366,7 +366,7 @@ export const mspQueueItems = [
     fixSummary: "Re-enable the Okta debug route in Cribl",
     owner: null,
     rollbackPlan: "Disable the five log types if CloudWatch ingest cost spikes; retain 24h of already shipped logs.",
-    rationale: "Seven AWS estates share the same EKS module. Auto-apply is blocked above 5 tenants even though the Terraform change is identical.",
+    rationale: "The same parser route is failing across the enterprise perimeter. Auto-apply stays blocked even though the hotfix is identical.",
     controls: [
       { framework: "SOC 2", id: "CC7.2", name: "System monitoring" },
       { framework: "CIS AWS", id: "5.1.1", name: "Cribl Okta route" },
@@ -1615,11 +1615,11 @@ function applyRangeToOverview(overview, rangeLabel) {
 }
 
 export function exportHistoryCsv(rows) {
-  const header = ["Timestamp", "Tenant", "Issue", "Event", "Actor", "Outcome", "Reason", "Confidence", "SLA"]
+  const header = ["Timestamp", "Scope", "Issue", "Event", "Actor", "Outcome", "Reason", "Confidence", "SLA"]
   const lines = rows.map((row) =>
     [
       new Date(row.at).toISOString(),
-      row.tenantName,
+      "Enterprise Production // US-East",
       row.issue,
       row.event ?? row.outcome,
       row.actor ?? row.approvedBy,

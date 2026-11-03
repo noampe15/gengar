@@ -550,7 +550,7 @@ export const tenants = [
     env: "Production · us-west-2",
     initials: "LS",
     status: "incident",
-    statusLabel: "Incident watch",
+    statusLabel: "Parser Health",
     scoreShift: 11,
     deltaShift: 5.1,
     rtoShift: 7,
@@ -620,7 +620,7 @@ export const tenants = [
     env: "Production · us-west-1",
     initials: "IN",
     status: "incident",
-    statusLabel: "Incident watch",
+    statusLabel: "Parser Health",
     scoreShift: 9,
     deltaShift: 3.6,
     rtoShift: 5,
@@ -700,19 +700,17 @@ export const tenants = [
   },
 ]
 
-export const GLOBAL_MSP = {
-  id: "global",
-  name: "Multi-tenant",
-  env: "All client portfolios",
-  initials: "MSP",
-  status: "live",
-  statusLabel: "Portfolio live",
+export const ENTERPRISE_SCOPE = {
+  id: "enterprise-production-us-east",
+  label: "Scope",
+  name: "Enterprise Production // US-East",
 }
 
-export const ENTERPRISE_SCOPE = {
-  id: "enterprise-core-us-east",
-  label: "Environment",
-  name: "Enterprise Core Production (US-East)",
+export const ENTERPRISE_TELEMETRY = {
+  scope: "Enterprise Production // US-East",
+  logIngestion: "184 GB/day",
+  pipelineHealth: "3 parsers degraded",
+  perimeter: "Single enterprise perimeter",
 }
 
 function clamp(n, min, max) {
@@ -1137,8 +1135,8 @@ export const remediations = {
     automatable: "Yes",
     history: [
       { date: "Jun 05", title: "Reviewed by SRE team — remediation plan drafted", actor: "SRE Team" },
-      { date: "Jun 04", title: "Ticket opened in JIRA (INFRA-4421)", actor: "Platform Engineering" },
-      { date: "Jun 03", title: "Alert triggered — severity escalated to Critical", actor: "PagerDuty" },
+      { date: "Jun 04", title: "Lineage anomaly logged (INFRA-4421)", actor: "Detection Engineering" },
+      { date: "Jun 03", title: "Parser health check — severity escalated to Critical", actor: "DetPulse" },
       { date: "Jun 02", title: "Drift first detected via Terraform plan diff", actor: "Automated Scanner" },
     ],
   },
@@ -1164,7 +1162,7 @@ export const remediations = {
     automatable: "Partial",
     history: [
       { date: "Jun 05", title: "Restore drill scheduled for next maintenance window", actor: "SRE Team" },
-      { date: "Jun 03", title: "Ticket opened in JIRA (BKP-1184)", actor: "Platform Engineering" },
+      { date: "Jun 03", title: "Lineage anomaly logged (BKP-1184)", actor: "Detection Engineering" },
       { date: "Jun 01", title: "Verification job failed three consecutive nights", actor: "Backup Monitor" },
     ],
   },
@@ -1189,8 +1187,8 @@ export const remediations = {
     owner: "Payments\nSRE",
     automatable: "No",
     history: [
-      { date: "Jun 04", title: "Runbook gap confirmed in game-day retro", actor: "Incident Commander" },
-      { date: "Jun 02", title: "Ticket opened in JIRA (PAY-2201)", actor: "Payments SRE" },
+      { date: "Jun 04", title: "Parser health gap confirmed in rule review", actor: "Detection Engineering Lead" },
+      { date: "Jun 02", title: "Lineage anomaly logged (PAY-2201)", actor: "Detection Engineering" },
       { date: "May 28", title: "Failover tabletop stalled without a documented path", actor: "SRE Team" },
     ],
   },

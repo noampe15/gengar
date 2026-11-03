@@ -6,11 +6,6 @@ export function visibleFilterKeys(page, isGlobal, remediationView = "queue") {
   if (page === "resources") {
     return ["resource", "type", "issue", "provider", "businessUnit", "priority"]
   }
-  if (page === "tenants") {
-    return isGlobal
-      ? ["industry"]
-      : ["resource", "type", "issue", "provider", "businessUnit", "priority"]
-  }
   if (page === "overview") {
     return isGlobal ? ["industry", "priority"] : ["priority"]
   }
@@ -91,7 +86,7 @@ export function ExtraFilters({
     issue: (
       <FilterMenu
         key="issue"
-        label="Issue"
+        label="Detection Rules"
         searchable
         options={options.issue}
         value={filters.issue}

@@ -1,9 +1,9 @@
-import { STACK_STAGES } from "../detection"
+import { LINEAGE_NODES, STACK_STAGES } from "../detection"
 
-export default function StackPipeline({ value, onChange }) {
+export default function StackPipeline({ value, onChange, node, onNode }) {
   return (
     <div className="rounded-2xl border border-slate-200/80 bg-white p-3 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
-      <p className="px-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">SecOps stack</p>
+      <p className="px-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">Pipeline lineage</p>
       <div className="mt-2 flex flex-col gap-2 lg:flex-row lg:items-center">
         {STACK_STAGES.map((stage, index) => {
           const active = value === stage
@@ -30,6 +30,29 @@ export default function StackPipeline({ value, onChange }) {
           )
         })}
       </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {LINEAGE_NODES.map((item) => {
+          const active = node === item.id
+          return (
+            <button
+              key={item.id}
+              type="button"
+              aria-pressed={active}
+              onClick={() => onNode(active ? "" : item.id)}
+              className={`rounded-full border px-3 py-1 text-[12px] font-semibold outline-none focus-visible:ring-2 focus-visible:ring-[#6d5cff] ${
+                active
+                  ? "border-[#6d5cff] bg-[#6d5cff] text-white"
+                  : "border-slate-200 bg-slate-50 text-slate-700 hover:border-[#6d5cff]/40 hover:bg-[#f3f1ff]"
+              }`}
+            >
+              {item.label}
+            </button>
+          )
+        })}
+      </div>
+      <p className="mt-2 px-1 text-[11px] text-slate-500">
+        Select a lineage node to show only detection rules affected by that component&apos;s schema drift.
+      </p>
     </div>
   )
 }

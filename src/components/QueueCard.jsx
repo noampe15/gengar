@@ -118,7 +118,7 @@ export default function QueueCard({
             )}
             {scope !== "tenant" && compact && (
               <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">
-                Affects {item.tenantCount} {item.tenantCount === 1 ? "tenant" : "tenants"}
+                Scope: Enterprise Production // US-East
               </span>
             )}
             <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">
@@ -135,8 +135,7 @@ export default function QueueCard({
           </div>
           {scope !== "tenant" && !compact && (
             <p className="mt-2 truncate text-[12px] text-slate-600">
-              Affects {item.tenantCount} {item.tenantCount === 1 ? "tenant" : "tenants"}
-              {`: ${item.tenantNames.join(", ")}${extra > 0 ? ` +${extra} more` : ""}`}
+              Scope: Enterprise Production // US-East
             </p>
           )}
           {detail && (
@@ -176,7 +175,7 @@ export default function QueueCard({
                 onClick={() => (item.cta === "request-access" ? onRequestAccess?.(item) : onReview(item))}
                 className="inline-flex h-8 items-center justify-center rounded-lg bg-[#6d5cff] px-3 text-[12px] font-semibold text-white outline-none hover:bg-[#5b4cf0] focus-visible:ring-2 focus-visible:ring-[#6d5cff] focus-visible:ring-offset-2"
               >
-                {item.cta === "request-access" ? "Request access" : "Review Global Fix"}
+                {item.cta === "request-access" ? "Request access" : "Review detection rule"}
               </button>
               <div className="relative" ref={menuRef}>
                 <button

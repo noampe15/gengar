@@ -44,7 +44,7 @@ export default function ResourcesPage({
           <thead>
             <tr className="text-[11.5px] font-medium text-slate-400">
               <th className="pb-3 font-medium">Resource</th>
-              <th className="pb-3 font-medium">Issue</th>
+              <th className="pb-3 font-medium">Detection Rules</th>
               <th className="pb-3 font-medium">Provider</th>
               <th className="pb-3 font-medium">Business Unit</th>
               <th className="pb-3 font-medium">Priority</th>

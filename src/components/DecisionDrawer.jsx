@@ -1,6 +1,8 @@
-import { useEffect, useRef } from "react"
-import { Check, X } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
+import { Check, GitPullRequest, X } from "lucide-react"
 import { getAiRemediation } from "../data"
+import { branchFor, issueByTitle } from "../detection"
+import BacktestPanel from "./BacktestPanel"
 import SchemaDiff from "./SchemaDiff"
 
 function relativeAgo(at) {
@@ -13,9 +15,12 @@ function relativeAgo(at) {
 
 export default function DecisionDrawer({ item, historyEntry, onClose, onDecide }) {
   const closeRef = useRef(null)
+  const [prOpened, setPrOpened] = useState(false)
   const pack = item ? getAiRemediation({ ...item, rtoDelta: item.rtoDelta ?? 9, name: item.issue }) : null
+  const branch = branchFor(item?.issue)
 
   useEffect(() => {
+    setPrOpened(false)
     closeRef.current?.focus()
     function onKey(e) {
       if (e.key === "Escape") onClose()
@@ -42,7 +47,7 @@ export default function DecisionDrawer({ item, historyEntry, onClose, onDecide }
                 {historyEntry.issue}
               </h2>
               <p className="mt-0.5 text-[12px] text-slate-500">
-                {historyEntry.tenantName}
+                Enterprise Production // US-East
                 {historyEntry.confidence != null ? ` · ${historyEntry.confidence}% confidence at apply` : ""}
               </p>
             </div>
@@ -102,9 +107,6 @@ export default function DecisionDrawer({ item, historyEntry, onClose, onDecide }
   }
 
   if (!item || !pack) return null
-  const tenants = item.affectedTenants?.length
-    ? item.affectedTenants
-    : (item.tenantNames ?? []).map((name) => ({ name, initials: name.slice(0, 2).toUpperCase() }))
 
   return (
     <div className="fixed inset-0 z-[70] flex justify-end bg-slate-900/35" onClick={onClose}>
@@ -117,7 +119,9 @@ export default function DecisionDrawer({ item, historyEntry, onClose, onDecide }
       >
         <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-[#6d5cff]">Human-in-the-loop review</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-[#6d5cff]">
+              {item.agent ? "AI agent remediation" : "Human-in-the-loop review"}
+            </p>
             <h2 id="decision-drawer-title" className="mt-1 text-[16px] font-semibold text-slate-900">
               {item.issue}
             </h2>
@@ -142,7 +146,7 @@ export default function DecisionDrawer({ item, historyEntry, onClose, onDecide }
             </h3>
             <p className="mt-1.5 text-[13px] text-slate-700">{item.fixSummary}</p>
             {pack.panels ? (
-              <SchemaDiff panels={pack.panels} />
+              <SchemaDiff panels={pack.panels} branch={branch} />
             ) : (
             <pre className="mt-2 overflow-x-auto rounded-xl bg-[#0f172a] px-3 py-2.5 font-mono text-[11px] leading-relaxed text-slate-200">
               {pack.diff.map((line, i) => (
@@ -162,21 +166,24 @@ export default function DecisionDrawer({ item, historyEntry, onClose, onDecide }
             </pre>
             )}
           </section>
+          {issueByTitle(item.issue)?.backtest ? (
+            <BacktestPanel metrics={issueByTitle(item.issue).backtest} title={item.issue} />
+          ) : null}
           <section>
-            <h3 className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Affected tenants</h3>
-            <ul className="mt-2 space-y-1.5">
-              {tenants.map((t) => (
-                <li key={t.id ?? t.name} className="flex items-center gap-2 text-[13px] text-slate-700">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#f3f1ff] text-[9px] font-semibold text-[#6d5cff]">
-                    {t.initials}
-                  </span>
-                  {t.name}
-                </li>
-              ))}
-            </ul>
-            {item.tenantCount > tenants.length && (
-              <p className="mt-1.5 text-[12px] text-slate-500">+{item.tenantCount - tenants.length} more tenants in this cluster</p>
-            )}
+            <h3 className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Security scope</h3>
+            <p className="mt-1.5 text-[13px] font-medium text-slate-800">Scope: Enterprise Production // US-East</p>
+            {item.scopeItems?.length ? (
+              <ul className="mt-2 space-y-1.5">
+                {item.scopeItems.map((t) => (
+                  <li key={t.id ?? t.name} className="flex items-center gap-2 text-[13px] text-slate-700">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#f3f1ff] text-[9px] font-semibold text-[#6d5cff]">
+                      {t.initials}
+                    </span>
+                    {t.name}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </section>
           <section>
             <h3 className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Confidence rationale</h3>
@@ -199,13 +206,23 @@ export default function DecisionDrawer({ item, historyEntry, onClose, onDecide }
         <div className="flex flex-col gap-2 border-t border-slate-100 px-5 py-4">
           <button
             type="button"
-            onClick={() => onDecide("approve", item)}
+            onClick={() => setPrOpened(true)}
             className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-[#6d5cff] text-[13px] font-semibold text-white outline-none hover:bg-[#5b4cf0] focus-visible:ring-2 focus-visible:ring-[#6d5cff]"
           >
-            <Check className="h-4 w-4" />
-            Approve
+            {prOpened ? <Check className="h-4 w-4" /> : <GitPullRequest className="h-4 w-4" />}
+            Open Detection-as-Code PR (GitHub)
           </button>
-          <div className="grid grid-cols-2 gap-2">
+          {prOpened ? (
+            <p className="text-center text-[12px] font-medium text-emerald-700">Opened on {branch}</p>
+          ) : null}
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={() => onDecide("approve", item)}
+              className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 text-[13px] font-semibold text-slate-700 outline-none hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#6d5cff]"
+            >
+              Approve
+            </button>
             <button
               type="button"
               onClick={() => onDecide("reject", item)}

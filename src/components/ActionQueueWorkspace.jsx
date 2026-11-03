@@ -1,17 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { createPortal } from "react-dom"
 import { AlertTriangle, ArrowDown, ArrowUp, MoreVertical, Search, Timer, Undo2 } from "lucide-react"
 import QueueCard, { QueueCardSkeleton } from "./QueueCard"
 import InfoTooltip from "./InfoTooltip"
 import AssignMenu from "./AssignMenu"
 import FilterMenu from "./FilterMenu"
-import TenantHoverList from "./TenantHoverList"
 import { SeverityBadge } from "./Badges"
 import { scenarioFor } from "../detection"
 import {
   QUEUE_AGE_BUCKETS,
   QUEUE_AI_STATUSES,
-  mspTenants,
   queueBlastCount,
   slaDeadlineStatus,
   sortWorkspaceQueue,
@@ -23,8 +20,8 @@ const GRID_BULK =
   "32px minmax(0, 3.2fr) 1.6fr 1.5fr 1.4fr 1.2fr 215px"
 
 const COLUMNS = [
-  { key: "issue", label: "Issue", sortable: true, defaultDir: "asc" },
-  { key: "blast", label: "Tenants affected", sortable: true, defaultDir: "desc" },
+  { key: "issue", label: "Detection Rules", sortable: true, defaultDir: "asc" },
+  { key: "blast", label: "Scope", sortable: true, defaultDir: "desc" },
   { key: "sla", label: "SLA", sortable: true, defaultDir: "asc" },
   { key: "confidence", label: "AI confidence", sortable: true, defaultDir: "desc" },
   { key: "owner", label: "Owner", sortable: false },
@@ -82,90 +79,9 @@ function SortHeader({ col, sort, onSort }) {
   )
 }
 
-function enrichQueueTenants(item) {
-  const raw = item.affectedTenants?.length
-    ? item.affectedTenants
-    : (item.tenantNames ?? []).map((name, i) => ({ id: `${item.id}-${i}`, name, initials: name.slice(0, 2).toUpperCase() }))
-  return raw.map((t) => {
-    const full = mspTenants.find((row) => row.id === t.id || row.name === t.name)
-    return full ? { ...t, ...full } : t
-  })
-}
-
-function BlastCell({ item, onOpenTenant }) {
-  const [open, setOpen] = useState(false)
-  const [pos, setPos] = useState(null)
-  const ref = useRef(null)
-  const hideTimer = useRef(null)
-  const popupId = `blast-tenants-${item.id}`
-  const tenants = enrichQueueTenants(item)
-  const count = tenants.length || queueBlastCount(item)
-  const extra = Math.max(0, count - 2)
-  const preview = tenants.slice(0, 2).map((t) => t.name).join(", ")
-
-  function place() {
-    const el = ref.current
-    if (!el) return
-    const rect = el.getBoundingClientRect()
-    const width = 352
-    const left = Math.min(Math.max(8, rect.left), window.innerWidth - width - 12)
-    setPos({ top: rect.bottom, left, width })
-  }
-
-  function show() {
-    window.clearTimeout(hideTimer.current)
-    place()
-    setOpen(true)
-  }
-
-  function hide() {
-    hideTimer.current = window.setTimeout(() => setOpen(false), 80)
-  }
-
-  useEffect(() => () => window.clearTimeout(hideTimer.current), [])
-
+function ScopeCell() {
   return (
-    <div className="relative z-0 min-w-0 hover:z-[90] focus-within:z-[90]" ref={ref}>
-      <button
-        type="button"
-        className="w-full min-w-0 rounded-md text-left outline-none hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#6d5cff]"
-        aria-expanded={open}
-        aria-controls={popupId}
-        aria-label={`${count} ${count === 1 ? "tenant" : "tenants"}. Show full list.`}
-        onClick={(e) => e.stopPropagation()}
-        onMouseEnter={show}
-        onMouseLeave={hide}
-        onFocus={show}
-        onBlur={(e) => {
-          if (!e.relatedTarget || !document.getElementById(popupId)?.contains(e.relatedTarget)) hide()
-        }}
-      >
-        <p className="text-[13px] font-bold text-slate-900">
-          {count} {count === 1 ? "tenant" : "tenants"}
-        </p>
-        <p className="text-[11.5px] leading-tight text-slate-500">
-          {preview}
-          {extra > 0 ? ` +${extra} more` : ""}
-        </p>
-      </button>
-      {open &&
-        pos &&
-        createPortal(
-          <div
-            id={popupId}
-            role="region"
-            aria-label="Blast radius tenants"
-            style={{ top: pos.top, left: pos.left, width: pos.width }}
-            className="fixed z-[80] pt-1"
-            onMouseEnter={show}
-            onMouseLeave={hide}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <TenantHoverList tenants={tenants} label="Blast radius" onOpenTenant={onOpenTenant} />
-          </div>,
-          document.body,
-        )}
-    </div>
+    <p className="text-[12.5px] font-medium leading-snug text-slate-800">Enterprise Production // US-East</p>
   )
 }
 
@@ -377,7 +293,7 @@ export default function ActionQueueWorkspace({
     else onReview(item)
   }
 
-  const inScopeLabel = scope === "tenant" ? `${ranked.length} in scope` : `${ranked.length} of 78 in scope`
+  const inScopeLabel = `${ranked.length} in enterprise scope`
 
   return (
     <section className="relative flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
@@ -385,16 +301,15 @@ export default function ActionQueueWorkspace({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-[16px] font-semibold text-slate-900">Action queue</h2>
+              <h2 className="text-[16px] font-semibold text-slate-900">Detection Health & Pipeline Lineage</h2>
               <p className="inline-flex items-center gap-1 text-[12px] text-slate-600" data-pin="queue-rank">
-                Ranked by SLA risk × tenants affected
+                Ranked by detection-SLA risk across the enterprise perimeter
                 <InfoTooltip label="How the queue is ranked">
-                  Score = (1 / hours to detection-SLA breach) × tenants affected. A High item hitting 14 tenants can outrank a
-                  Critical hitting one. Already-breached items rank first, then by how overdue they are × tenants affected.
+                  Score = 1 / hours to detection-SLA breach. Already-breached rules rank first, then by how overdue they are.
                 </InfoTooltip>
               </p>
             </div>
-            <p className="mt-0.5 text-[12px] text-slate-600">Requires human-in-the-loop approval</p>
+            <p className="mt-0.5 text-[12px] text-slate-600">Parser health and lineage anomalies across the production rule set</p>
           </div>
           {headerAction}
         </div>
@@ -406,8 +321,8 @@ export default function ActionQueueWorkspace({
                 type="search"
                 value={search}
                 onChange={(e) => onSearch(e.target.value)}
-                aria-label="Search issues or tenants"
-                placeholder="Search issues or tenants"
+                aria-label="Search detection rules"
+                placeholder="Search detection rules"
                 className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-8 pr-3 text-[13px] text-slate-800 outline-none placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-[#6d5cff]"
               />
             </div>
@@ -453,7 +368,7 @@ export default function ActionQueueWorkspace({
       </header>
 
       {wide ? (
-        <div className="min-h-0 flex-1 overflow-auto" role="table" aria-label="Action queue">
+        <div className="min-h-0 flex-1 overflow-auto" role="table" aria-label="Detection Health & Pipeline Lineage">
           <div
             role="row"
             className="sticky top-0 z-10 flex h-[38px] items-center border-y border-slate-200/80 bg-[#FAF9FD]"
@@ -547,7 +462,7 @@ export default function ActionQueueWorkspace({
                       )}
                     </div>
                     <div role="cell" className="min-w-0">
-                      <BlastCell item={item} onOpenTenant={onOpenTenant} />
+                      <ScopeCell />
                     </div>
                     <div role="cell" className="min-w-0">
                       <SlaCell breachAt={item.breachAt} now={now} />
@@ -564,7 +479,7 @@ export default function ActionQueueWorkspace({
                         onClick={() => openRow(item)}
                         className="inline-flex h-8 shrink-0 items-center justify-center rounded-lg bg-[#6d5cff] px-2.5 text-[12px] font-semibold text-white outline-none hover:bg-[#5b4cf0] focus-visible:ring-2 focus-visible:ring-[#6d5cff] focus-visible:ring-offset-2"
                       >
-                        {item.cta === "request-access" ? "Request access" : "Review Global Fix"}
+                        {item.cta === "request-access" ? "Request access" : "Review detection rule"}
                       </button>
                       <RowMenu item={item} onAssign={onAssign} onSnooze={onSnooze} onDismiss={onDismiss} />
                     </div>
@@ -656,7 +571,7 @@ export default function ActionQueueWorkspace({
                 <li key={row.id} className="rounded-lg bg-slate-50 px-3 py-2">
                   <span className="font-medium">{row.issue}</span>
                   <span className="mt-0.5 block text-[12px] text-slate-500">
-                    {queueBlastCount(row)} tenants · {row.confidence}% confidence
+                    Enterprise Production // US-East · {row.confidence}% confidence
                   </span>
                 </li>
               ))}

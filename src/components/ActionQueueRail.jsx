@@ -60,11 +60,11 @@ export default function ActionQueueRail({
   const fill = compact && !tenant
   const showingCount = visible.length
   const totalItems = ranked.length
-  const title = compact ? "Latest action queue" : "Action queue"
+  const title = "Detection Health & Pipeline Lineage"
   const subtitle = tenant
     ? "Ranked by detection SLA × coverage"
     : compact
-      ? "Ranked by SLA risk × tenants affected"
+      ? "Ranked by detection-SLA risk across the enterprise perimeter"
       : "Requires human-in-the-loop approval"
 
   return (
@@ -100,9 +100,9 @@ export default function ActionQueueRail({
         </div>
         {!tenant && !compact && (
         <p className="mt-2 inline-flex items-center gap-1 text-[11px] text-slate-600" data-pin="queue-rank">
-          Ranked by SLA risk × tenants affected
+          Ranked by detection-SLA risk across the enterprise perimeter
           <InfoTooltip label="How the queue is ranked">
-            Score = (1 / hours to detection-SLA breach) × tenants affected. A High item hitting 14 tenants can outrank a Critical hitting one.
+            Score = 1 / hours to detection-SLA breach. Already-breached rules rank first.
           </InfoTooltip>
         </p>
         )}
@@ -114,14 +114,14 @@ export default function ActionQueueRail({
                   type="search"
                   value={search}
                   onChange={(e) => onSearch(e.target.value)}
-                  aria-label="Search the action queue"
-                  placeholder="Search issues or tenants"
+                  aria-label="Search detection rules"
+                  placeholder="Search detection rules"
                   className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-[#6d5cff]"
                 />
               </div>
             )}
             <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-600">
-              <span>{tenant ? `${ranked.length} in scope` : `${ranked.length} of 78 in scope`}</span>
+              <span>{ranked.length} in enterprise scope</span>
               {!tenant && (
               <span className="rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-600">Needs human approval</span>
               )}

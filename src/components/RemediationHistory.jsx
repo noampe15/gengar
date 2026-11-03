@@ -95,7 +95,6 @@ export default function RemediationHistory({
     [aiRows, humanRows],
   )
 
-  const tenants = useMemo(() => [...new Set(rows.map((r) => r.tenantName))].sort(), [rows])
   const approvers = useMemo(() => [...new Set(rows.map((r) => r.approvedBy).filter(Boolean))].sort(), [rows])
 
   const filtered = useMemo(() => {
@@ -169,7 +168,7 @@ export default function RemediationHistory({
   const emptyCopy = (
     <div className="px-2 py-10 text-center">
       <p className="text-[15px] font-semibold text-slate-800">No activity in this period</p>
-      <p className="mt-1 text-[13px] text-slate-500">This tenant has no remediations in the activity log.</p>
+      <p className="mt-1 text-[13px] text-slate-500">No remediations in Enterprise Production // US-East.</p>
     </div>
   )
 
@@ -289,18 +288,6 @@ export default function RemediationHistory({
                 onFilter("event", v)
               }}
             />
-            {isGlobal && (
-              <FilterMenu
-                label="Tenant"
-                searchable
-                options={tenants}
-                value={tenant}
-                onChange={(v) => {
-                  setPage(1)
-                  onFilter("tenant", v)
-                }}
-              />
-            )}
             <FilterMenu
               label="Approver"
               options={approvers}
@@ -326,8 +313,8 @@ export default function RemediationHistory({
               <thead className="sticky top-0 z-10 bg-white text-[11.5px] text-slate-400">
                 <tr>
                   <SortTh id="at" label="Timestamp" />
-                  <SortTh id="tenantName" label="Tenant" />
-                  <SortTh id="issue" label="Issue" />
+                  <SortTh id="scope" label="Scope" />
+                  <SortTh id="issue" label="Detection Rules" />
                   <SortTh id="event" label="Event" />
                   <SortTh id="actor" label="Actor" />
                   <SortTh id="outcome" label="Outcome" />
@@ -346,7 +333,7 @@ export default function RemediationHistory({
                       className={`border-t border-slate-100 ${focused ? "bg-[#f7f6ff] ring-2 ring-inset ring-[#6d5cff]/50" : ""}`}
                     >
                       <td className="py-2.5 pr-3 whitespace-nowrap text-slate-600">{formatTs(row.at)}</td>
-                      <td className="py-2.5 pr-3">{row.tenantName}</td>
+                      <td className="py-2.5 pr-3">Enterprise Production // US-East</td>
                       <td className="py-2.5 pr-3">{row.issue}</td>
                       <td className="py-2.5 pr-3">
                         <EventChip row={row} />

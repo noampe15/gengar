@@ -19,7 +19,6 @@ export default function InvestigationDrawer({ risk, onClose, onRemediate }) {
 
   if (!risk) return null
   const brief = getInvestigation(risk)
-  const tenants = risk.affectedTenants ?? []
   const extraCount = Array.isArray(brief.peers) ? brief.peers.length : 0
 
   if (!risk.cluster) {
@@ -121,14 +120,14 @@ export default function InvestigationDrawer({ risk, onClose, onRemediate }) {
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#f3f1ff]">
                 <Sparkles className="h-4 w-4" />
               </span>
-              AI Incident Triage
+              Detection Rule Review
             </div>
             <h2 id="ai-triage-title" className="mt-2 text-[18px] font-semibold tracking-tight text-slate-900">
               {risk.issue}
             </h2>
             <div className="mt-1 flex flex-wrap items-center gap-2 text-[12px] text-slate-400">
               <span className="font-medium text-slate-600">
-                Affects {risk.tenantCount ?? tenants.length ?? 1} tenants
+                Scope: Enterprise Production // US-East
               </span>
               <span>·</span>
               <span>
@@ -166,30 +165,10 @@ export default function InvestigationDrawer({ risk, onClose, onRemediate }) {
             </div>
           )}
 
-          <p className="mt-5 text-[11px] font-semibold tracking-wide text-slate-400">AFFECTED CLIENT ENVIRONMENTS</p>
-          <ul className="mt-2 space-y-2">
-            {(tenants.length ? tenants : [{ id: risk.tenantId ?? risk.id, name: risk.tenantName ?? risk.name, env: risk.tenantEnv ?? "", initials: risk.tenantInitials ?? "TN", resource: risk.name, score: risk.score, priority: risk.priority }]).map(
-              (tenant) => (
-                <li
-                  key={tenant.id}
-                  className="flex items-center gap-3 rounded-xl border border-slate-100 px-3 py-2.5"
-                >
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f3f1ff] text-[10px] font-semibold text-[#6d5cff]">
-                    {tenant.initials}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[13px] font-semibold text-slate-800">{tenant.name}</span>
-                    <span className="block truncate text-[11px] text-slate-400">
-                      {tenant.resource}
-                      {tenant.env ? ` · ${tenant.env}` : ""}
-                      {tenant.provider ? ` · ${tenant.provider}` : ""}
-                    </span>
-                  </span>
-                  <SeverityBadge severity={tenant.priority} />
-                </li>
-              ),
-            )}
-          </ul>
+          <p className="mt-5 text-[11px] font-semibold tracking-wide text-slate-400">ENTERPRISE PERIMETER</p>
+          <p className="mt-2 rounded-xl border border-slate-100 px-3 py-2.5 text-[13px] font-medium text-slate-800">
+            Scope: Enterprise Production // US-East
+          </p>
         </div>
 
         <div className="border-t border-slate-100 px-5 py-4">

@@ -1,14 +1,9 @@
 import { useMemo, useState } from "react"
-import DetectionKpis from "./components/DetectionKpis"
+import DetectionControlPlane from "./components/DetectionControlPlane"
 import StackPipeline from "./components/StackPipeline"
 import Header from "./components/Header"
 import Sidebar from "./components/Sidebar"
 import CopilotBar from "./components/CopilotBar"
-import AiEfficiencyHero from "./components/AiEfficiencyHero"
-import PortfolioHealth from "./components/PortfolioHealth"
-import SlaPerformance from "./components/SlaPerformance"
-import ActionQueueRail from "./components/ActionQueueRail"
-import TenantOverview from "./components/TenantOverview"
 import DecisionDrawer from "./components/DecisionDrawer"
 import InvestigationDrawer from "./components/InvestigationDrawer"
 import RemediationModal from "./components/RemediationModal"
@@ -29,8 +24,8 @@ import {
   risks,
   tenants,
 } from "./data"
-import { MSP_INDUSTRIES, exportHistoryCsv, historyRowForActivity, mspHistory, mspQueueItems, mspTenants } from "./mspDashboard"
-import { scenarioFor } from "./detection"
+import { MSP_INDUSTRIES, exportHistoryCsv, mspHistory, mspQueueItems, mspTenants } from "./mspDashboard"
+import { drawerItemFor, LINEAGE_NODES, ruleMatchesLineageNode, scenarioFor } from "./detection"
 
 const PRIORITY_ORDER = ["Critical", "High", "Medium", "Low"]
 
@@ -134,6 +129,7 @@ export default function App() {
     businessUnit: "",
     priority: "",
     stack: "",
+    lineage: "",
     sort: "score-desc",
   })
 
@@ -225,7 +221,7 @@ export default function App() {
         items.push({
           id: cluster.id,
           title: cluster.issue,
-          body: `Affects ${cluster.tenantCount} tenants`,
+          body: "Scope: Enterprise Production // US-East",
           time: (cluster.checkedAgo ?? "").replace(/^checked\s+/i, ""),
           priority: cluster.priority,
           risk: cluster,
@@ -283,6 +279,7 @@ export default function App() {
           if (item.snoozeUntil && item.snoozeUntil > Date.now()) return false
           if (filters.priority && item.priority !== filters.priority) return false
           if (filters.stack && (scenarioFor(item.issue)?.stage ?? item.category) !== filters.stack) return false
+          if (filters.lineage && !ruleMatchesLineageNode(item.issue, filters.lineage)) return false
           return true
         })
     }
@@ -295,12 +292,13 @@ export default function App() {
       if (item.snoozeUntil && item.snoozeUntil > Date.now()) return false
       if (filters.priority && item.priority !== filters.priority) return false
       if (filters.stack && (scenarioFor(item.issue)?.stage ?? item.category) !== filters.stack) return false
+      if (filters.lineage && !ruleMatchesLineageNode(item.issue, filters.lineage)) return false
       if (industryIds) {
         return item.affectedTenants?.some((t) => industryIds.has(t.id)) || (item.tenantNames ?? []).some((name) => roster.some((t) => t.name === name && industryIds.has(t.id)))
       }
       return true
     })
-  }, [mspItems, isGlobal, roster, filters.businessUnit, filters.priority, filters.stack, overview, tenantPatches])
+  }, [mspItems, isGlobal, roster, filters.businessUnit, filters.priority, filters.stack, filters.lineage, overview, tenantPatches])
 
   const mspVisible = useMemo(() => {
     const q = queueSearch.trim().toLowerCase()
@@ -308,6 +306,7 @@ export default function App() {
       if (filters.issue && item.issue !== filters.issue) return false
       if (filters.priority && item.priority !== filters.priority) return false
       if (filters.stack && (scenarioFor(item.issue)?.stage ?? item.category) !== filters.stack) return false
+      if (filters.lineage && !ruleMatchesLineageNode(item.issue, filters.lineage)) return false
       if (filters.provider) {
         const blob = `${item.issue} ${item.fixSummary} ${item.category}`.toLowerCase()
         const want = filters.provider.toLowerCase()
@@ -329,7 +328,7 @@ export default function App() {
       if (queueAge && item.ageBucket !== queueAge) return false
       return true
     })
-  }, [mspScoped, filters.issue, filters.priority, filters.stack, filters.provider, queueSearch, queueAiStatus, queueAge])
+  }, [mspScoped, filters.issue, filters.priority, filters.stack, filters.lineage, filters.provider, queueSearch, queueAiStatus, queueAge])
 
   const historyRows = useMemo(() => {
     let rows = mspHistory
@@ -344,12 +343,16 @@ export default function App() {
 
   const filterChips = useMemo(() => {
     const chips = []
-    if (filters.issue) chips.push(`Issue: ${filters.issue}`)
+    if (filters.issue) chips.push(`Detection Rules: ${filters.issue}`)
+    if (filters.lineage) {
+      const node = LINEAGE_NODES.find((item) => item.id === filters.lineage)
+      if (node) chips.push(`Lineage: ${node.label}`)
+    }
     if (filters.provider) chips.push(`Provider: ${filters.provider}`)
     if (queueAiStatus) chips.push(`AI status: ${queueAiStatus}`)
     if (queueAge) chips.push(`Age: ${queueAge}`)
     return chips
-  }, [filters.issue, filters.provider, queueAiStatus, queueAge])
+  }, [filters.issue, filters.lineage, filters.provider, queueAiStatus, queueAge])
 
   function flash(message) {
     setToast(message)
@@ -412,7 +415,7 @@ export default function App() {
     },
     onDismiss: (item) => {
       patchItem(item.id, { dismissed: true })
-      flash("Dismissed from the action queue")
+      flash("Dismissed from detection health")
     },
     onBulkApprove: (rows) => {
       rows.forEach((row) => patchItem(row.id, { dismissed: true }))
@@ -444,7 +447,7 @@ export default function App() {
     if (isGlobal) {
       const header = [
         "Issue",
-        "Tenant",
+        "Scope",
         "Provider",
         "MTTD-D",
         "Priority",
@@ -453,7 +456,7 @@ export default function App() {
       const lines = clustered.map((row) =>
         [
           row.issue,
-          (row.affectedTenants ?? []).map((item) => item.name).join("; "),
+          "Enterprise Production // US-East",
           (row.affectedProviders ?? []).map((item) => item.name).join("; ") || row.provider,
           `+${row.rtoDelta}h`,
           row.priority,
@@ -590,81 +593,22 @@ export default function App() {
       )}
 
       <main className="px-3 pb-8 lg:px-4">
-        {(page === "overview" || page === "remediation") && (
+        {page === "remediation" && (
           <div className="mb-4">
-            <StackPipeline value={filters.stack} onChange={(stage) => setFilter("stack", stage)} />
+            <StackPipeline
+              value={filters.stack}
+              onChange={(stage) => setFilter("stack", stage)}
+              node={filters.lineage}
+              onNode={(id) => setFilter("lineage", id)}
+            />
           </div>
         )}
-        {page === "overview" && isGlobal && (
-          <div className="space-y-4">
-            <DetectionKpis />
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-              <div className="space-y-4">
-                <PortfolioHealth
-                  range={range}
-                  onOpenStatus={() => setPage("resources")}
-                  onOpenTenant={() => setPage("resources")}
-                />
-                <AiEfficiencyHero
-                  range={range}
-                  onOpenHistory={(outcome) => {
-                    openHistoryNav({ outcome, actor: "AI" })
-                  }}
-                />
-                <SlaPerformance
-                  range={range}
-                  onOpenBreaches={() => {
-                    openHistoryNav({ sla: "SLA breached" })
-                  }}
-                />
-              </div>
-              <div className="relative min-h-[28rem] lg:min-h-0">
-                <div className="lg:absolute lg:inset-0">
-                  <ActionQueueRail
-                    compact
-                    items={mspScoped}
-                    filterChips={[]}
-                    onClearFilters={() => {}}
-                    selectedId={reviewing?.id}
-                    onViewAll={() => openRemediation("queue")}
-                    {...queueHandlers}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-        {page === "overview" && !isGlobal && overview && (
-          <TenantOverview
-            overview={overview}
-            queueItems={mspScoped}
-            selectedId={reviewing?.id}
-            onHistory={(arg) => openHistoryNav(arg)}
-            onActivityAction={(entry) => {
-              if (entry.action === "queue") {
-                const item = mspScoped.find((row) => row.id === entry.queueId)
-                if (item) {
-                  setHistoryFocusId("")
-                  setRollbackEntry(null)
-                  setReviewing(item)
-                  openRemediation("queue")
-                }
-                return
-              }
-              const row = historyRowForActivity(entry, tenantId)
-              if (!row) {
-                flash("No matching history row")
-                return
-              }
-              openHistoryRow(row, { rollback: Boolean(entry.openRollback) || Boolean(entry.openChange) })
+        {page === "overview" && (
+          <DetectionControlPlane
+            onOpenIssue={(issue) => {
+              setRollbackEntry(null)
+              setReviewing(drawerItemFor(issue))
             }}
-            onViewAll={() => openRemediation("queue")}
-            onQueueFilter={({ status, age }) => {
-              setQueueAiStatus(status ?? "")
-              setQueueAge(age ?? "")
-              openRemediation("queue")
-            }}
-            queueHandlers={queueHandlers}
           />
         )}
         {page === "remediation" && (

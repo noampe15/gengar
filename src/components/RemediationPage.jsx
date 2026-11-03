@@ -9,7 +9,7 @@ function RemediationViewToggle({ view, onView }) {
       className="inline-flex shrink-0 rounded-full border border-slate-200 bg-slate-50 p-0.5"
     >
       {[
-        { id: "queue", label: "Queue" },
+        { id: "queue", label: "Detection Health" },
         { id: "history", label: "Activity log" },
       ].map((tab) => {
         const active = view === tab.id

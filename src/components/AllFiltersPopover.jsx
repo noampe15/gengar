@@ -55,7 +55,7 @@ export default function AllFiltersPopover({
         >
           {children ?? (
             <>
-              <FilterMenu label="Issue" searchable options={issueOptions} value={issue} onChange={(v) => onChange("issue", v)} />
+              <FilterMenu label="Detection Rules" searchable options={issueOptions} value={issue} onChange={(v) => onChange("issue", v)} />
               <FilterMenu
                 label="Provider"
                 options={providerOptions}
