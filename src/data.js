@@ -1,7 +1,9 @@
+import { panelsFor, scenarioFor } from "./detection"
+
 export const businessUnits = [
   {
     id: "checkout",
-    name: "Checkout & Core Revenue",
+    name: "Telemetry Sources (EDR/IdP/Cloud)",
     icon: "cart",
     rto: "< 15 min",
     resources: 34,
@@ -11,7 +13,7 @@ export const businessUnits = [
   },
   {
     id: "logistics",
-    name: "Logistics & Supply",
+    name: "Data Pipeline (Cribl/Kafka)",
     icon: "truck",
     rto: "< 1 hr",
     resources: 28,
@@ -21,7 +23,7 @@ export const businessUnits = [
   },
   {
     id: "support",
-    name: "Customer Support Systems",
+    name: "Detection Engine (Sentinel/Splunk/Snowflake)",
     icon: "headset",
     rto: "< 4 hrs",
     resources: 18,
@@ -31,7 +33,7 @@ export const businessUnits = [
   },
   {
     id: "hr",
-    name: "Internal HR & Billing",
+    name: "Response & SOAR (Torq/Tines)",
     icon: "users",
     rto: "< 24 hrs",
     resources: 11,
@@ -43,38 +45,38 @@ export const businessUnits = [
 
 export const deficitRows = [
   {
-    name: "Databases",
+    name: "Telemetry Sources (EDR/IdP/Cloud)",
     count: 118,
     segments: { Critical: 42, High: 34, Medium: 28, Low: 14 },
   },
   {
-    name: "Virtual Machines",
+    name: "Data Pipeline (Cribl/Kafka)",
     count: 241,
     segments: { Critical: 58, High: 72, Medium: 81, Low: 30 },
   },
   {
-    name: "Storage Services",
+    name: "Detection Engine (Sentinel/Splunk/Snowflake)",
     count: 312,
     segments: { Critical: 38, High: 70, Medium: 148, Low: 56 },
   },
   {
-    name: "Containers",
+    name: "Response & SOAR (Torq/Tines)",
     count: 94,
     segments: { Critical: 22, High: 31, Medium: 27, Low: 14 },
   },
   {
-    name: "Networking",
+    name: "EDR Agents",
     count: 79,
     segments: { Critical: 24, High: 29, Medium: 18, Low: 8 },
   },
   {
-    name: "Key Vaults",
+    name: "Identity Provider",
     count: 38,
     extra: true,
     segments: { Critical: 5, High: 7, Medium: 9, Low: 17 },
   },
   {
-    name: "Identity Systems",
+    name: "Cloud Audit Logs",
     count: 52,
     extra: true,
     segments: { Critical: 16, High: 11, Medium: 17, Low: 8 },
@@ -84,13 +86,13 @@ export const deficitRows = [
 export const risks = [
   {
     id: "r1",
-    name: "prod-db-postgresql-04",
+    name: "sentinel-rule-powershell-enc",
     type: "RDS",
     icon: "db",
-    businessUnit: "Checkout & Billing",
+    businessUnit: "Detection Engine (Sentinel/Splunk/Snowflake)",
     tier: "Tier-1",
-    issue: "Active IaC configuration drift",
-    relatedResources: ["prod-db-postgresql-05", "prod-db-replica-01"],
+    issue: "Suspicious PowerShell EncodedCommand (MITRE T1059.001)",
+    relatedResources: ["sentinel-rule-powershell-peer", "sentinel-rule-powershell-replica"],
     provider: "AWS",
     rtoDelta: 14,
     checkedAgo: "checked 6h ago",
@@ -102,13 +104,13 @@ export const risks = [
   },
   {
     id: "r2",
-    name: "vm-prod-core-api-07",
+    name: "okta-impossible-travel",
     type: "VM",
     icon: "vm",
-    businessUnit: "Checkout & Billing",
+    businessUnit: "Detection Engine (Sentinel/Splunk/Snowflake)",
     tier: "Tier-1",
-    issue: "Snapshot verification protection gap",
-    relatedResources: ["vm-prod-core-api-08", "vm-prod-core-api-09", "vm-prod-worker-03"],
+    issue: "Okta Impossible Travel & Session Anomaly (MITRE T1078)",
+    relatedResources: ["okta-session-anomaly", "okta-session-peer", "okta-session-worker"],
     provider: "Azure",
     rtoDelta: 9,
     checkedAgo: "checked 5h ago",
@@ -120,13 +122,13 @@ export const risks = [
   },
   {
     id: "r3",
-    name: "prod-k8s-cluster-payments-01",
+    name: "torq-isolate-host",
     type: "EKS",
     icon: "k8s",
-    businessUnit: "Checkout & Billing",
+    businessUnit: "Detection Engine (Sentinel/Splunk/Snowflake)",
     tier: "Tier-1",
-    issue: "Missing disaster recovery runbook",
-    relatedResources: ["prod-k8s-cluster-checkout-02"],
+    issue: "LSASS Memory Dump via Rundll32 (MITRE T1003.001)",
+    relatedResources: ["torq-isolate-peer"],
     provider: "GCP",
     rtoDelta: 11,
     checkedAgo: "checked 8h ago",
@@ -141,9 +143,9 @@ export const risks = [
     name: "prod-cache-redis-edge-02",
     type: "Cache",
     icon: "db",
-    businessUnit: "Checkout & Billing",
+    businessUnit: "Detection Engine (Sentinel/Splunk/Snowflake)",
     tier: "Tier-1",
-    issue: "Unencrypted replication traffic",
+    issue: "AWS IAM Root & AssumeRole Abuse (MITRE T1078.004)",
     relatedResources: [
       "prod-cache-redis-edge-03",
       "prod-cache-redis-edge-04",
@@ -164,9 +166,9 @@ export const risks = [
     name: "stg-lb-checkout-front-03",
     type: "LB",
     icon: "net",
-    businessUnit: "Logistics & Supply",
+    businessUnit: "Data Pipeline (Cribl/Kafka)",
     tier: "Tier-2",
-    issue: "TLS certificate expires in 12 days",
+    issue: "Splunk lookup trusted_corporate_subnets.csv stale",
     relatedResources: ["stg-lb-checkout-front-04"],
     provider: "AWS",
     rtoDelta: 6,
@@ -182,9 +184,9 @@ export const risks = [
     name: "prod-sa-storage-invoices",
     type: "Storage",
     icon: "storage",
-    businessUnit: "Internal HR & Billing",
+    businessUnit: "Response & SOAR (Torq/Tines)",
     tier: "Tier-2",
-    issue: "Public blob container policy drift",
+    issue: "Torq isolate-host webhook 422",
     relatedResources: ["prod-sa-storage-payroll", "prod-sa-storage-archive"],
     provider: "Azure",
     rtoDelta: 4,
@@ -200,9 +202,9 @@ export const risks = [
     name: "prod-gke-support-chat-04",
     type: "GKE",
     icon: "k8s",
-    businessUnit: "Customer Support Systems",
+    businessUnit: "Detection Engine (Sentinel/Splunk/Snowflake)",
     tier: "Tier-2",
-    issue: "HPA max replicas too low for peak",
+    issue: "Cribl route dropping Okta debug events",
     relatedResources: [],
     provider: "GCP",
     rtoDelta: 3,
@@ -218,9 +220,9 @@ export const risks = [
     name: "prod-vm-warehouse-sync-11",
     type: "VM",
     icon: "vm",
-    businessUnit: "Logistics & Supply",
+    businessUnit: "Data Pipeline (Cribl/Kafka)",
     tier: "Tier-2",
-    issue: "Backup window overlapping peak load",
+    issue: "Snowflake OCSF merge lag",
     relatedResources: ["prod-vm-warehouse-sync-12", "prod-vm-warehouse-etl-02"],
     provider: "Azure",
     rtoDelta: 5,
@@ -236,9 +238,9 @@ export const risks = [
     name: "prod-net-vpn-hub-01",
     type: "VPN",
     icon: "net",
-    businessUnit: "Internal HR & Billing",
+    businessUnit: "Response & SOAR (Torq/Tines)",
     tier: "Tier-3",
-    issue: "Stale firewall exception for contractor CIDR",
+    issue: "Kafka consumer lag on falcon.raw",
     relatedResources: [
       "prod-net-vpn-spoke-02",
       "prod-net-vpn-spoke-03",
@@ -261,9 +263,9 @@ export const risks = [
     name: "prod-bq-analytics-mart",
     type: "Warehouse",
     icon: "db",
-    businessUnit: "Customer Support Systems",
+    businessUnit: "Detection Engine (Sentinel/Splunk/Snowflake)",
     tier: "Tier-3",
-    issue: "No regional failover configured",
+    issue: "AWS IAM Root & AssumeRole Abuse (MITRE T1078.004)",
     relatedResources: ["prod-bq-reporting-mart"],
     provider: "GCP",
     rtoDelta: 1,
@@ -276,12 +278,12 @@ export const risks = [
   },
   {
     id: "r1m",
-    name: "prod-db-postgresql-04",
+    name: "sentinel-rule-powershell-enc",
     type: "RDS",
     icon: "db",
-    businessUnit: "Checkout & Billing",
+    businessUnit: "Detection Engine (Sentinel/Splunk/Snowflake)",
     tier: "Tier-1",
-    issue: "Missing point-in-time restore coverage",
+    issue: "Suspicious PowerShell EncodedCommand (MITRE T1059.001)",
     relatedResources: [],
     provider: "AWS",
     rtoDelta: 8,
@@ -294,12 +296,12 @@ export const risks = [
   },
   {
     id: "r2m",
-    name: "vm-prod-core-api-07",
+    name: "okta-impossible-travel",
     type: "VM",
     icon: "vm",
-    businessUnit: "Checkout & Billing",
+    businessUnit: "Detection Engine (Sentinel/Splunk/Snowflake)",
     tier: "Tier-1",
-    issue: "Unpatched kernel CVE-2024-1086",
+    issue: "Defender DeviceProcessEvents parser drift",
     relatedResources: [],
     provider: "Azure",
     rtoDelta: 10,
@@ -312,12 +314,12 @@ export const risks = [
   },
   {
     id: "r3m",
-    name: "prod-k8s-cluster-payments-01",
+    name: "torq-isolate-host",
     type: "EKS",
     icon: "k8s",
-    businessUnit: "Checkout & Billing",
+    businessUnit: "Detection Engine (Sentinel/Splunk/Snowflake)",
     tier: "Tier-1",
-    issue: "Privileged container runtime allowed",
+    issue: "Okta Impossible Travel & Session Anomaly (MITRE T1078)",
     relatedResources: [],
     provider: "GCP",
     rtoDelta: 6,
@@ -336,7 +338,7 @@ export const healthyResources = [
     name: "prod-db-catalog-readonly-02",
     type: "RDS",
     icon: "db",
-    businessUnit: "Checkout & Billing",
+    businessUnit: "Detection Engine (Sentinel/Splunk/Snowflake)",
     tier: "Tier-1",
     issue: "",
     relatedResources: [],
@@ -355,7 +357,7 @@ export const healthyResources = [
     name: "prod-vm-payments-web-03",
     type: "VM",
     icon: "vm",
-    businessUnit: "Checkout & Billing",
+    businessUnit: "Detection Engine (Sentinel/Splunk/Snowflake)",
     tier: "Tier-1",
     issue: "",
     relatedResources: [],
@@ -374,7 +376,7 @@ export const healthyResources = [
     name: "prod-eks-search-cluster-02",
     type: "EKS",
     icon: "k8s",
-    businessUnit: "Customer Support Systems",
+    businessUnit: "Detection Engine (Sentinel/Splunk/Snowflake)",
     tier: "Tier-2",
     issue: "",
     relatedResources: [],
@@ -393,7 +395,7 @@ export const healthyResources = [
     name: "prod-gcs-static-assets",
     type: "Storage",
     icon: "storage",
-    businessUnit: "Customer Support Systems",
+    businessUnit: "Detection Engine (Sentinel/Splunk/Snowflake)",
     tier: "Tier-2",
     issue: "",
     relatedResources: [],
@@ -412,7 +414,7 @@ export const healthyResources = [
     name: "prod-lb-public-edge-01",
     type: "LB",
     icon: "net",
-    businessUnit: "Logistics & Supply",
+    businessUnit: "Data Pipeline (Cribl/Kafka)",
     tier: "Tier-2",
     issue: "",
     relatedResources: [],
@@ -431,7 +433,7 @@ export const healthyResources = [
     name: "prod-cache-catalog-01",
     type: "Cache",
     icon: "db",
-    businessUnit: "Checkout & Billing",
+    businessUnit: "Detection Engine (Sentinel/Splunk/Snowflake)",
     tier: "Tier-1",
     issue: "",
     relatedResources: [],
@@ -450,7 +452,7 @@ export const healthyResources = [
     name: "prod-kv-secrets-core",
     type: "Key Vault",
     icon: "storage",
-    businessUnit: "Internal HR & Billing",
+    businessUnit: "Response & SOAR (Torq/Tines)",
     tier: "Tier-1",
     issue: "",
     relatedResources: [],
@@ -469,7 +471,7 @@ export const healthyResources = [
     name: "prod-gke-batch-reports-01",
     type: "GKE",
     icon: "k8s",
-    businessUnit: "Internal HR & Billing",
+    businessUnit: "Response & SOAR (Torq/Tines)",
     tier: "Tier-3",
     issue: "",
     relatedResources: [],
@@ -707,6 +709,12 @@ export const GLOBAL_MSP = {
   statusLabel: "Portfolio live",
 }
 
+export const ENTERPRISE_SCOPE = {
+  id: "enterprise-core-us-east",
+  label: "Environment",
+  name: "Enterprise Core Production (US-East)",
+}
+
 function clamp(n, min, max) {
   return Math.min(max, Math.max(min, n))
 }
@@ -795,7 +803,7 @@ export function applyTenant(tenant, { businessUnits, deficitRows, risks, healthy
 }
 
 function attachTenant(row, tenant) {
-  const clouds = ["AWS", "Azure", "GCP"]
+  const clouds = ["Sentinel", "Splunk", "Snowflake", "Cribl", "Torq", "CrowdStrike"]
   const seed = Math.abs([...`${tenant.id}:${row.issue || row.id}`].reduce((n, ch) => n + ch.charCodeAt(0), 0))
   return {
     ...row,
@@ -926,84 +934,26 @@ export function clusterRisksByIssue(rows) {
 }
 
 const MSP_QUEUE_ISSUES = [
-  "Active IaC configuration drift",
-  "Snapshot verification protection gap",
-  "Missing disaster recovery runbook",
-  "Unencrypted replication traffic",
-  "TLS certificate expires in 12 days",
-  "Public blob container policy drift",
-  "HPA max replicas too low for peak",
-  "Backup window overlapping peak load",
-  "Stale firewall exception for contractor CIDR",
-  "No regional failover configured",
-  "Missing point-in-time restore coverage",
-  "Unpatched kernel CVE-2024-1086",
-  "Privileged container runtime allowed",
-  "S3 bucket versioning disabled",
-  "GuardDuty detector suspended",
-  "CloudTrail log file validation off",
-  "RDS deletion protection disabled",
-  "EBS volumes missing encryption",
-  "Security group allows 0.0.0.0/0 SSH",
-  "IAM user with unused access keys",
-  "Root account MFA not enforced",
-  "KMS key rotation disabled",
-  "Lambda timeout below SLO",
-  "ALB idle timeout too aggressive",
-  "WAF managed ruleset not attached",
-  "ECS task role overly permissive",
-  "EKS control plane logging disabled",
-  "Node group AMI 47 days stale",
-  "Cluster autoscaler max nodes too low",
-  "NAT gateway single-AZ bottleneck",
-  "VPC flow logs not retained",
-  "Route53 health check failing",
-  "ACM certificate auto-renewal failed",
-  "CloudFront origin protocol mismatch",
-  "ElastiCache at-rest encryption off",
-  "Redshift public accessibility on",
-  "Glue job IAM role wildcard actions",
-  "SQS queue encryption not set",
-  "SNS topic missing topic policy",
-  "EventBridge rule targeting deleted bus",
-  "Secrets Manager secret 400 days old",
-  "Parameter Store value unencrypted",
-  "Backup vault lock not enabled",
-  "AMI public share detected",
-  "ECR scan-on-push disabled",
-  "Image has critical CVE in base layer",
-  "Pod security admission in warn mode",
-  "Network policy missing for namespace",
-  "Service account token automount on",
-  "Ingress TLS secret expired",
-  "Persistent volume reclaim policy retain",
-  "etcd backup older than 24 hours",
-  "Azure NSG allows RDP from internet",
-  "Storage account public blob access",
-  "Key Vault purge protection off",
-  "SQL database TDE not enabled",
-  "AKS RBAC not integrated with Entra",
-  "Defender for Cloud plan not assigned",
-  "Activity log diagnostic missing",
-  "App Service HTTPS-only disabled",
-  "Function app CORS set to wildcard",
-  "Cosmos DB firewall allow Azure IPs",
-  "Load balancer health probe failing",
-  "VMSS autoscale cooldown too long",
-  "Private endpoint missing DNS zone",
-  "GCP Cloud SQL SSL not required",
-  "GKE workload identity not enabled",
-  "GCS bucket uniform access off",
-  "IAM service account key 90 days old",
-  "Firewall rule allows 0.0.0.0/0 RDP",
-  "Cloud Armor policy not attached",
-  "Pub/Sub topic without dead-letter",
-  "BigQuery dataset public IAM member",
-  "Cloud Run ingress set to all",
-  "VPC Service Controls perimeter gap",
-  "Secret Manager CMEK not configured",
-  "Compute disk snapshot schedule missing",
-  "OS Login not enforced on project",
+  "Suspicious PowerShell EncodedCommand (MITRE T1059.001)",
+  "Okta Impossible Travel & Session Anomaly (MITRE T1078)",
+  "LSASS Memory Dump via Rundll32 (MITRE T1003.001)",
+  "AWS IAM Root & AssumeRole Abuse (MITRE T1078.004)",
+  "Splunk lookup trusted_corporate_subnets.csv stale",
+  "Torq isolate-host webhook 422",
+  "Cribl route dropping Okta debug events",
+  "Snowflake OCSF merge lag",
+  "Kafka consumer lag on falcon.raw",
+  "Defender DeviceProcessEvents parser drift",
+  "Suspicious PowerShell EncodedCommand (MITRE T1059.001)",
+  "Okta Impossible Travel & Session Anomaly (MITRE T1078)",
+  "LSASS Memory Dump via Rundll32 (MITRE T1003.001)",
+  "AWS IAM Root & AssumeRole Abuse (MITRE T1078.004)",
+  "Splunk lookup trusted_corporate_subnets.csv stale",
+  "Torq isolate-host webhook 422",
+  "Cribl route dropping Okta debug events",
+  "Snowflake OCSF merge lag",
+  "Kafka consumer lag on falcon.raw",
+  "Defender DeviceProcessEvents parser drift",
 ]
 
 function hash32(str) {
@@ -1039,7 +989,7 @@ export function buildRemediationQueue(selectedTenants) {
   const templates = risks.filter((row) => row.issue)
   if (!selectedTenants.length || !templates.length) return []
 
-  const clouds = ["AWS", "Azure", "GCP"]
+  const clouds = ["Sentinel", "Splunk", "Snowflake", "Cribl", "Torq", "CrowdStrike"]
   const scopeKey = selectedTenants.map((item) => item.id).join(",")
 
   return MSP_QUEUE_ISSUES.map((issue, index) => {
@@ -1128,7 +1078,7 @@ export function getTriageBrief(cluster) {
     lead
       ? ` Highest exposure is ${lead.name} on ${lead.resource}${lead.env ? ` (${lead.env})` : ""}.`
       : ""
-  } Recommended path: one agentic IaC deploy that remediates every affected tenant in a single change window.`
+  } Recommended path: one detection-logic change that repairs the broken rule across every affected tenant in a single pipeline window.`
 }
 
 export function affectsNote(related) {
@@ -1164,7 +1114,7 @@ export function expandSharedIssues(risks) {
 }
 
 export const remediations = {
-  "Active IaC configuration drift": {
+  "Suspicious PowerShell EncodedCommand (MITRE T1059.001)": {
     actions: [
       {
         title: "IaC Re-sync & State Lock",
@@ -1192,7 +1142,7 @@ export const remediations = {
       { date: "Jun 02", title: "Drift first detected via Terraform plan diff", actor: "Automated Scanner" },
     ],
   },
-  "Snapshot verification protection gap": {
+  "Okta Impossible Travel & Session Anomaly (MITRE T1078)": {
     actions: [
       {
         title: "Enable snapshot integrity checks",
@@ -1218,7 +1168,7 @@ export const remediations = {
       { date: "Jun 01", title: "Verification job failed three consecutive nights", actor: "Backup Monitor" },
     ],
   },
-  "Missing disaster recovery runbook": {
+  "LSASS Memory Dump via Rundll32 (MITRE T1003.001)": {
     actions: [
       {
         title: "Publish failover runbook",
@@ -1244,7 +1194,7 @@ export const remediations = {
       { date: "May 28", title: "Failover tabletop stalled without a documented path", actor: "SRE Team" },
     ],
   },
-  "Missing point-in-time restore coverage": {
+  "Suspicious PowerShell EncodedCommand (MITRE T1059.001)": {
     actions: [
       {
         title: "Enable PITR window",
@@ -1265,7 +1215,7 @@ export const remediations = {
       { date: "Jun 03", title: "Gap flagged in backup coverage report", actor: "Automated Scanner" },
     ],
   },
-  "Unpatched kernel CVE-2024-1086": {
+  "Defender DeviceProcessEvents parser drift": {
     actions: [
       {
         title: "Patch and recycle node pool",
@@ -1287,7 +1237,7 @@ export const remediations = {
       { date: "Jun 03", title: "Vendor advisory ingested", actor: "Automated Scanner" },
     ],
   },
-  "Privileged container runtime allowed": {
+  "Okta Impossible Travel & Session Anomaly (MITRE T1078)": {
     actions: [
       {
         title: "Enforce restricted PSS",
@@ -1308,7 +1258,7 @@ export const remediations = {
       { date: "Jun 02", title: "Privileged pod detected in admission logs", actor: "Kyverno" },
     ],
   },
-  "Unencrypted replication traffic": {
+  "AWS IAM Root & AssumeRole Abuse (MITRE T1078.004)": {
     actions: [
       {
         title: "Require TLS for replica links",
@@ -1326,7 +1276,7 @@ export const remediations = {
       { date: "Jun 03", title: "Plaintext replication flagged on overlay", actor: "Automated Scanner" },
     ],
   },
-  "TLS certificate expires in 12 days": {
+  "Splunk lookup trusted_corporate_subnets.csv stale": {
     actions: [
       {
         title: "Renew and attach certificate",
@@ -1344,7 +1294,7 @@ export const remediations = {
       { date: "Jun 01", title: "Expiry window entered 14-day threshold", actor: "Certificate Monitor" },
     ],
   },
-  "Public blob container policy drift": {
+  "Torq isolate-host webhook 422": {
     actions: [
       {
         title: "Revert public ACL",
@@ -1362,7 +1312,7 @@ export const remediations = {
       { date: "Jun 02", title: "Policy drift detected vs IaC baseline", actor: "Automated Scanner" },
     ],
   },
-  "HPA max replicas too low for peak": {
+  "Cribl route dropping Okta debug events": {
     actions: [
       {
         title: "Raise HPA ceiling",
@@ -1380,7 +1330,7 @@ export const remediations = {
       { date: "Jun 01", title: "Peak concurrency exceeded maxReplicas", actor: "Datadog" },
     ],
   },
-  "Backup window overlapping peak load": {
+  "Snowflake OCSF merge lag": {
     actions: [
       {
         title: "Shift backup window",
@@ -1398,7 +1348,7 @@ export const remediations = {
       { date: "Jun 02", title: "IO contention correlated with snapshot jobs", actor: "Observability" },
     ],
   },
-  "Stale firewall exception for contractor CIDR": {
+  "Kafka consumer lag on falcon.raw": {
     actions: [
       {
         title: "Revoke contractor CIDR",
@@ -1416,7 +1366,7 @@ export const remediations = {
       { date: "Jun 03", title: "Stale CIDR flagged on VPN hub", actor: "Automated Scanner" },
     ],
   },
-  "No regional failover configured": {
+  "AWS IAM Root & AssumeRole Abuse (MITRE T1078.004)": {
     actions: [
       {
         title: "Add secondary region replica",
@@ -1450,14 +1400,26 @@ export function getInvestigation(risk) {
   const confidence = isDrift ? 96 : Math.min(95, Math.max(82, 70 + Math.round(risk.score / 8)))
   const outcome = plan.impact?.[0] ?? "the control gap is closed"
 
-  const narrative = isDrift
-    ? `${risk.name} has drifted from Terraform: live backup retention, Multi-AZ, and deletion protection no longer match the master plan. That gap is adding +${risk.rtoDelta}h to RTO on ${risk.tier} ${risk.businessUnit}. Re-syncing IaC restores a known-good baseline so failover can meet the recovery objective.`
-    : `${risk.issue} on ${risk.name} is adding +${risk.rtoDelta}h to RTO for ${risk.tier} ${risk.businessUnit}. Applying the recommended fix (${plan.actions[0]?.title ?? "remediation"}) will ${outcome.charAt(0).toLowerCase()}${outcome.slice(1)}.`
+  const detection = scenarioFor(risk.issue)
+  const narrative = detection
+    ? `${detection.failureClass} on ${risk.name}. Pipeline: ${detection.lineage}. ${detection.rootCause} Impact: ${detection.impact}.`
+    : isDrift
+    ? `${risk.name} has drifted from its detection baseline. Live parser fields no longer match the production rule on ${risk.tier} ${risk.businessUnit}. Repairing the schema mapping closes the silent gap.`
+    : `${risk.issue} on ${risk.name} is degrading detection on ${risk.tier} ${risk.businessUnit}. Applying the recommended fix (${plan.actions[0]?.title ?? "remediation"}) will ${outcome.charAt(0).toLowerCase()}${outcome.slice(1)}.`
 
   return { confidence, narrative, peers }
 }
 
 export function getAiRemediation(risk) {
+  const detection = panelsFor(risk.issue)
+  if (detection?.panels) {
+    return {
+      summary: detection.summary,
+      diff: detection.panels[1].code.split("\n"),
+      panels: detection.panels,
+      plan: getRemediation(risk.issue),
+    }
+  }
   const plan = getRemediation(risk.issue)
   const addr = String(risk.issue || risk.name).toLowerCase().replace(/[^a-z0-9]+/g, "_").slice(0, 40)
   const isDrift = /iac|drift/i.test(risk.issue)
@@ -1497,6 +1459,27 @@ export function getAiRemediation(risk) {
 }
 
 export function getRemediation(issue) {
+  const detection = scenarioFor(issue) ?? panelsFor(issue)
+  if (detection?.summary) {
+    return {
+      actions: [
+        {
+          title: "Apply repaired detection logic",
+          body: detection.summary,
+        },
+      ],
+      issueDetail: detection.rootCause,
+      why: detection.summary,
+      impact: [detection.impact, "Parser output and the production rule agree again"],
+      effort: "~90 minutes",
+      owner: "Detection\nEngineering",
+      automatable: "Partial",
+      history: [
+        { date: "Jun 05", title: "Schema diff staged for review", actor: "DetPulse" },
+        { date: "Jun 03", title: detection.failureClass, actor: "Pipeline monitor" },
+      ],
+    }
+  }
   return (
     remediations[issue] ?? {
       actions: [{ title: "Review and patch", body: "Open the owner runbook and apply the standard control." }],
@@ -1508,7 +1491,7 @@ export function getRemediation(issue) {
       automatable: "No",
       history: [
         { date: "Jun 05", title: "Remediation plan drafted", actor: "SRE Team" },
-        { date: "Jun 03", title: "Issue opened for owner review", actor: "Beacon" },
+        { date: "Jun 03", title: "Issue opened for owner review", actor: "DetPulse" },
       ],
     }
   )
@@ -1517,24 +1500,24 @@ export function getRemediation(issue) {
 export const rangeOptions = ["Last 24 hours", "Last 7 days", "Last 30 days"]
 export const typeOptions = ["RDS", "VM", "EKS", "GKE", "Cache", "LB", "Storage", "VPN", "Warehouse"]
 export const issueOptions = [
-  "Active IaC configuration drift",
-  "Snapshot verification protection gap",
-  "Missing disaster recovery runbook",
-  "Missing point-in-time restore coverage",
-  "Unpatched kernel CVE-2024-1086",
-  "Privileged container runtime allowed",
+  "Suspicious PowerShell EncodedCommand (MITRE T1059.001)",
+  "Okta Impossible Travel & Session Anomaly (MITRE T1078)",
+  "LSASS Memory Dump via Rundll32 (MITRE T1003.001)",
+  "Suspicious PowerShell EncodedCommand (MITRE T1059.001)",
+  "Defender DeviceProcessEvents parser drift",
+  "Okta Impossible Travel & Session Anomaly (MITRE T1078)",
 ]
 export const providerOptions = ["AWS", "Azure", "GCP"]
 export const buOptions = [
-  "Checkout & Billing",
-  "Logistics & Supply",
-  "Customer Support Systems",
-  "Internal HR & Billing",
+  "Detection Engine (Sentinel/Splunk/Snowflake)",
+  "Data Pipeline (Cribl/Kafka)",
+  "Detection Engine (Sentinel/Splunk/Snowflake)",
+  "Response & SOAR (Torq/Tines)",
 ]
 export const priorityOptions = ["Critical", "High", "Medium", "Low", "None"]
 export const sortOptions = [
   { id: "score-desc", label: "Score (high → low)" },
   { id: "score-asc", label: "Score (low → high)" },
-  { id: "rto-desc", label: "RTO delta (high → low)" },
+  { id: "rto-desc", label: "MTTD-D (high → low)" },
   { id: "name-asc", label: "Resource name" },
 ]

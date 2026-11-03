@@ -85,7 +85,7 @@ export function copilotBanner(query, rows, meta = {}) {
     const tenantCount = top.tenantCount ?? 1
     return `AI found ${n} clustered ${n === 1 ? "control gap" : "control gaps"} matching “${query}”. “${
       top.issue
-    }” is the lead finding — ${tenantCount} tenant${tenantCount === 1 ? "" : "s"} affected, +${top.rtoDelta}h RTO delta, ${
+    }” is the lead finding — ${tenantCount} tenant${tenantCount === 1 ? "" : "s"} affected, MTTD-D ${top.rtoDelta}, ${
       top.priority
     } priority.`
   }
@@ -95,5 +95,5 @@ export function copilotBanner(query, rows, meta = {}) {
     rows.length > 1
       ? ` ${rows.length - 1} additional ${rows.length === 2 ? "finding is" : "findings are"} correlated in the same window.`
       : ""
-  return `AI found ${rows.length} matching ${rows.length === 1 ? "risk" : "risks"}. ${top.name} — ${top.issue} — is driving a +${top.rtoDelta}h RTO delta on ${top.tier} ${top.businessUnit}.${extra}`
+  return `AI found ${rows.length} matching ${rows.length === 1 ? "detection" : "detections"}. ${top.name} — ${top.issue} — is driving MTTD-D ${top.rtoDelta} on ${top.tier} ${top.businessUnit}.${extra}`
 }

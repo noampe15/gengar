@@ -144,6 +144,8 @@ function AccountMenu({ onLogOut }) {
 export default function Header({
   pageTitle,
   breadcrumb,
+  environmentLabel = "Environment",
+  environmentName = "Enterprise Core Production (US-East)",
   range,
   setRange,
   notifications,
@@ -176,7 +178,11 @@ export default function Header({
             ))}
           </nav>
         )}
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6d5cff]">DetPulse</p>
         <h1 className="truncate text-[16px] font-semibold tracking-tight text-slate-900">{pageTitle}</h1>
+        <p className="mt-0.5 truncate text-[12px] text-slate-500">
+          <span className="font-medium text-slate-600">{environmentLabel}:</span> {environmentName}
+        </p>
       </div>
 
       <div className="flex flex-wrap items-center gap-2 shrink-0">

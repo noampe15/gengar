@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react"
 import { Check, X } from "lucide-react"
 import { getAiRemediation } from "../data"
+import SchemaDiff from "./SchemaDiff"
 
 function relativeAgo(at) {
   if (!at) return "unknown time"
@@ -111,7 +112,7 @@ export default function DecisionDrawer({ item, historyEntry, onClose, onDecide }
         role="dialog"
         aria-modal="true"
         aria-labelledby="decision-drawer-title"
-        className="drawer-in flex h-full w-full max-w-[440px] flex-col bg-white shadow-2xl outline-none"
+        className={`drawer-in flex h-full w-full flex-col bg-white shadow-2xl outline-none ${pack?.panels ? "max-w-[760px]" : "max-w-[440px]"}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
@@ -136,8 +137,13 @@ export default function DecisionDrawer({ item, historyEntry, onClose, onDecide }
         </div>
         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-4">
           <section>
-            <h3 className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Proposed change</h3>
+            <h3 className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              {pack.panels ? "Live schema & detection logic diff" : "Proposed change"}
+            </h3>
             <p className="mt-1.5 text-[13px] text-slate-700">{item.fixSummary}</p>
+            {pack.panels ? (
+              <SchemaDiff panels={pack.panels} />
+            ) : (
             <pre className="mt-2 overflow-x-auto rounded-xl bg-[#0f172a] px-3 py-2.5 font-mono text-[11px] leading-relaxed text-slate-200">
               {pack.diff.map((line, i) => (
                 <span
@@ -154,6 +160,7 @@ export default function DecisionDrawer({ item, historyEntry, onClose, onDecide }
                 </span>
               ))}
             </pre>
+            )}
           </section>
           <section>
             <h3 className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Affected tenants</h3>

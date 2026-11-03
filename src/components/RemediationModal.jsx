@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { Check, GitPullRequest, Sparkles, Wrench, X, Zap } from "lucide-react"
 import { getAiRemediation } from "../data"
 import SharedIssueScope from "./SharedIssueScope"
+import SchemaDiff from "./SchemaDiff"
 
 export default function RemediationModal({ risk, onClose }) {
   const [ready, setReady] = useState(false)
@@ -27,7 +28,7 @@ export default function RemediationModal({ risk, onClose }) {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/35 p-4" onClick={onClose}>
       <div
-        className="flex max-h-[90vh] w-full max-w-[680px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+        className={`flex max-h-[90vh] w-full flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ${pack?.panels ? "max-w-[980px]" : "max-w-[680px]"}`}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-labelledby="ai-remediation-title"
@@ -76,13 +77,17 @@ export default function RemediationModal({ risk, onClose }) {
             </p>
           )}
 
-          <p className="mt-5 text-[11px] font-semibold tracking-wide text-slate-400">SUGGESTED TERRAFORM / IAC DIFF</p>
+          <p className="mt-5 text-[11px] font-semibold tracking-wide text-slate-400">
+            {pack.panels ? "LIVE SCHEMA & DETECTION LOGIC DIFF" : "SUGGESTED DETECTION LOGIC DIFF"}
+          </p>
           {!ready ? (
             <div className="mt-2 h-40 overflow-hidden rounded-xl bg-[#0f172a]">
               <div className="hunt-shimmer mt-6 ml-4 h-3 w-[70%] rounded-full opacity-40" />
               <div className="hunt-shimmer mt-3 ml-4 h-3 w-[55%] rounded-full opacity-40" />
               <div className="hunt-shimmer mt-3 ml-4 h-3 w-[62%] rounded-full opacity-40" />
             </div>
+          ) : pack.panels ? (
+            <SchemaDiff panels={pack.panels} />
           ) : (
             <pre className="mt-2 overflow-x-auto rounded-xl bg-[#0f172a] px-4 py-3 font-mono text-[12px] leading-relaxed text-slate-200">
               {pack.diff.map((line, i) => {

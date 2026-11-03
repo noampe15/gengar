@@ -6,12 +6,8 @@ import {
   ChevronsRight,
   LayoutGrid,
   SlidersHorizontal,
-  Users,
   Wrench,
 } from "lucide-react"
-import TenantSelector from "./TenantSelector"
-import { EnvRiskBadge } from "./Badges"
-import { envRiskSeverity } from "../data"
 
 const STORAGE_KEY = "beacon-sidebar-collapsed"
 
@@ -70,7 +66,7 @@ function Tip({ label, collapsed, children }) {
   )
 }
 
-function BeaconMark() {
+function DetPulseMark() {
   return (
     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#6d5cff]">
       <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
@@ -81,28 +77,14 @@ function BeaconMark() {
   )
 }
 
-export default function Sidebar({
-  page,
-  setPage,
-  isGlobal,
-  tenants,
-  tenantId,
-  onTenantChange,
-  envRisk,
-  envRiskByTenant,
-}) {
+export default function Sidebar({ page, setPage }) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed)
   const itemRefs = useRef([])
 
-  const tenantsTab = isGlobal
   const navItems = [
     { id: "overview", label: "Overview", icon: LayoutGrid },
     { id: "remediation", label: "Remediation", icon: Wrench },
-    {
-      id: "tenants",
-      label: tenantsTab ? "Tenants" : "Resources",
-      icon: tenantsTab ? Users : Box,
-    },
+    { id: "resources", label: "Resources", icon: Box },
     { id: "settings", label: "Settings", icon: SlidersHorizontal },
   ]
 
@@ -138,27 +120,11 @@ export default function Sidebar({
     >
       <div className={`shrink-0 border-b border-slate-100 ${collapsed ? "px-2 py-3" : "px-3 py-3"}`}>
         <div className={`flex items-center gap-2 ${collapsed ? "justify-center" : ""}`}>
-          <BeaconMark />
+          <DetPulseMark />
           {!collapsed && (
-            <span className="text-[16px] font-semibold tracking-tight text-slate-900">Beacon</span>
+            <span className="text-[16px] font-semibold tracking-tight text-slate-900">DetPulse</span>
           )}
         </div>
-        <div className={`mt-3 ${collapsed ? "flex justify-center" : ""}`}>
-          <Tip label="Select view" collapsed={collapsed}>
-            <TenantSelector
-              tenants={tenants}
-              value={tenantId}
-              onChange={onTenantChange}
-              envRiskByTenant={envRiskByTenant}
-              collapsed={collapsed}
-            />
-          </Tip>
-        </div>
-        {!isGlobal && !collapsed && (
-          <div className="mt-2">
-            <EnvRiskBadge severity={envRiskSeverity[envRisk] ?? "None"} label={envRisk} />
-          </div>
-        )}
       </div>
 
       <nav aria-label="Primary" className="flex min-h-0 flex-1 flex-col px-2 py-3">

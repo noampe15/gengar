@@ -125,7 +125,7 @@ export default function SlaPerformance({ range, tenantId, onOpenBreaches }) {
         </div>
 
         <div className="sm:border-l sm:border-slate-200/80 sm:pl-5">
-          <p className="text-[12px] font-medium text-slate-500">SLA met</p>
+          <p className="text-[12px] font-medium text-slate-500">Alert Fidelity / True Positive Recall (%)</p>
           <p className="mt-1 text-[32px] font-semibold leading-none tracking-tight text-slate-900">{formatSlaPct(sla.metPct)}%</p>
           <p className="mt-2 text-[12px] text-slate-500">
             <MetricDelta pts={sla.deltaPts} label={sla.priorLabel} />
@@ -134,8 +134,9 @@ export default function SlaPerformance({ range, tenantId, onOpenBreaches }) {
             <Sparkline
               series={sla.sparkline}
               valueKey="pct"
-              ariaLabel={`${trend} over the ${sla.periodLabel?.toLowerCase() ?? "selected period"}`}
-              formatHover={(p) => `${formatSlaPct(p.pct)}% met`}
+              ariaLabel={`Alert fidelity and true positive recall over the ${sla.periodLabel?.toLowerCase() ?? "selected period"}`}
+              formatHover={(p) => `${formatSlaPct(p.pct)}% true positive recall`}
+              unitLabel="True positive recall (%)"
             />
           </div>
         </div>

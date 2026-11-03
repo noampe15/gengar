@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { MoreVertical, ShieldAlert, Shield, Undo2, Ban } from "lucide-react"
 import { SeverityBadge } from "./Badges"
+import { scenarioFor } from "../detection"
 import AssignMenu from "./AssignMenu"
 
 function formatCountdown(ms) {
@@ -8,8 +9,8 @@ function formatCountdown(ms) {
   const total = Math.round(ms / 60000)
   const h = Math.floor(total / 60)
   const m = total % 60
-  if (h <= 0) return `RTO breach in ${m}m`
-  return `RTO breach in ${h}h ${String(m).padStart(2, "0")}m`
+  if (h <= 0) return `Detection SLA in ${m}m`
+  return `Detection SLA in ${h}h ${String(m).padStart(2, "0")}m`
 }
 
 function slaTone(ms) {
@@ -41,6 +42,7 @@ export default function QueueCard({
 }) {
   const [menu, setMenu] = useState(false)
   const menuRef = useRef(null)
+  const detail = scenarioFor(item.issue)
   const remain = item.breachAt - now
   const extra = Math.max(0, (item.tenantCount ?? 0) - (item.tenantNames ?? []).length)
   const reasonChip = Boolean(item.reason && (scope === "tenant" || compact))
@@ -84,6 +86,7 @@ export default function QueueCard({
         <div className={`min-w-0 flex-1 ${fill ? "flex min-h-0 flex-1 flex-col" : ""}`}>
           <div className="flex items-start justify-between gap-2">
             <p className="min-w-0 text-[13.5px] font-semibold leading-snug text-slate-900">
+              {detail ? `[${detail.failureClass}] ` : ""}
               {item.issue}
             </p>
             <span className="shrink-0">
@@ -136,8 +139,24 @@ export default function QueueCard({
               {`: ${item.tenantNames.join(", ")}${extra > 0 ? ` +${extra} more` : ""}`}
             </p>
           )}
+          {detail && (
+            <div className={`mt-1.5 space-y-0.5 text-[12px] leading-snug text-slate-600 ${compact ? "" : ""}`}>
+              <p>
+                <span className="font-medium text-slate-500">Pipeline: </span>
+                {detail.lineage}
+              </p>
+              <p>
+                <span className="font-medium text-slate-500">Impact: </span>
+                {detail.impact}
+              </p>
+              <p className={compact ? "line-clamp-2" : ""}>
+                <span className="font-medium text-slate-500">Root cause: </span>
+                {detail.rootCause}
+              </p>
+            </div>
+          )}
           <p className={`mt-1 text-[12px] text-slate-700 ${compact ? "" : "truncate"}`}>
-            <span className="font-medium text-slate-600">AI would: </span>
+            <span className="font-medium text-slate-600">Proposed fix: </span>
             {item.fixSummary}
           </p>
           <div className={`flex w-full items-center justify-between gap-2 ${fill ? "mt-auto pt-3" : "mt-3"}`}>

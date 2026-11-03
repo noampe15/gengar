@@ -62,7 +62,7 @@ export default function ActionQueueRail({
   const totalItems = ranked.length
   const title = compact ? "Latest action queue" : "Action queue"
   const subtitle = tenant
-    ? "Ranked by SLA risk × blast radius"
+    ? "Ranked by detection SLA × coverage"
     : compact
       ? "Ranked by SLA risk × tenants affected"
       : "Requires human-in-the-loop approval"
@@ -102,7 +102,7 @@ export default function ActionQueueRail({
         <p className="mt-2 inline-flex items-center gap-1 text-[11px] text-slate-600" data-pin="queue-rank">
           Ranked by SLA risk × tenants affected
           <InfoTooltip label="How the queue is ranked">
-            Score = (1 / hours to RTO breach) × tenants affected. A High item hitting 14 tenants can outrank a Critical hitting one.
+            Score = (1 / hours to detection-SLA breach) × tenants affected. A High item hitting 14 tenants can outrank a Critical hitting one.
           </InfoTooltip>
         </p>
         )}

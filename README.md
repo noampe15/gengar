@@ -1,6 +1,6 @@
-# Beacon
+# DetPulse
 
-Operational risk dashboard prototype matching the Beacon UI. Local React + Tailwind app with filterable risks, export, and a resource detail panel.
+Detection and pipeline resilience prototype for detection engineers and SecOps teams. Local React + Tailwind app with filterable detection health, export, and a schema-diff detail panel.
 
 ```bash
 npm install

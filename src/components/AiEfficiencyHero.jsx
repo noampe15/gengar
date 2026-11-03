@@ -51,7 +51,7 @@ export default function AiEfficiencyHero({ range, onOpenHistory }) {
         </div>
         <div className="sm:border-l sm:border-slate-200/80 sm:pl-5">
           <div className="flex items-center gap-1">
-            <p className="text-[12px] font-medium text-slate-500">Hours Saved by AI</p>
+            <p className="text-[12px] font-medium text-slate-500">Active Production Rules vs. Silently Broken Rules</p>
             <InfoTooltip label="How hours saved is calculated" align="right">
               {e.hoursCalc}
             </InfoTooltip>
@@ -64,8 +64,9 @@ export default function AiEfficiencyHero({ range, onOpenHistory }) {
             <Sparkline
               series={e.sparkline}
               valueKey="hours"
-              ariaLabel={`Hours saved by AI over the ${e.chipLabel}`}
-              formatHover={(p) => `${p.hours} hours saved`}
+              ariaLabel={`Active production rules versus silently broken rules over the ${e.chipLabel}`}
+              formatHover={(p) => `${p.hours} active production rules`}
+              unitLabel="Active production rules"
             />
           </div>
         </div>

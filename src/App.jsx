@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react"
+import DetectionKpis from "./components/DetectionKpis"
+import StackPipeline from "./components/StackPipeline"
 import Header from "./components/Header"
 import Sidebar from "./components/Sidebar"
 import CopilotBar from "./components/CopilotBar"
@@ -10,8 +12,6 @@ import TenantOverview from "./components/TenantOverview"
 import DecisionDrawer from "./components/DecisionDrawer"
 import InvestigationDrawer from "./components/InvestigationDrawer"
 import RemediationModal from "./components/RemediationModal"
-import TenantsRoster from "./components/TenantsRoster"
-import TenantDetail from "./components/TenantDetail"
 import ResourcesPage from "./components/ResourcesPage"
 import RemediationPage from "./components/RemediationPage"
 import SettingsPage from "./components/SettingsPage"
@@ -23,17 +23,15 @@ import {
   buildRemediationQueue,
   clusterRisksByIssue,
   deficitRows,
-  environmentRiskLevel,
+  ENTERPRISE_SCOPE,
   expandSharedIssues,
-  GLOBAL_MSP,
   healthyResources,
   risks,
   tenants,
 } from "./data"
-import { MSP_INDUSTRIES, exportHistoryCsv, historyRowForActivity, mspHistory, mspQueueItems, mspTenants, tenantOverviewFor } from "./mspDashboard"
+import { MSP_INDUSTRIES, exportHistoryCsv, historyRowForActivity, mspHistory, mspQueueItems, mspTenants } from "./mspDashboard"
+import { scenarioFor } from "./detection"
 
-const ALL_CLIENT_IDS = tenants.map((item) => item.id)
-const SCOPE_TENANTS = [GLOBAL_MSP, ...tenants]
 const PRIORITY_ORDER = ["Critical", "High", "Medium", "Low"]
 
 function uniqueInOrder(values) {
@@ -105,17 +103,12 @@ function applyFilters(list, filters) {
 
 export default function App() {
   const [page, setPage] = useState("overview")
-  const [tenantId, setTenantId] = useState(GLOBAL_MSP.id)
-  const [clientIds, setClientIds] = useState(ALL_CLIENT_IDS)
   const [range, setRange] = useState("Last 7 days")
   const jitter = 0
   const [investigating, setInvestigating] = useState(null)
   const [remediating, setRemediating] = useState(null)
   const [reviewing, setReviewing] = useState(null)
   const [mspItems, setMspItems] = useState(mspQueueItems)
-  const [ownerOverrides, setOwnerOverrides] = useState({})
-  const [rosterTenantId, setRosterTenantId] = useState(null)
-  const [tenantsStatusFilter, setTenantsStatusFilter] = useState("all")
   const [toast, setToast] = useState("")
   const [signedIn, setSignedIn] = useState(true)
   const [copilotQuery, setCopilotQuery] = useState("")
@@ -140,22 +133,14 @@ export default function App() {
     provider: "",
     businessUnit: "",
     priority: "",
+    stack: "",
     sort: "score-desc",
   })
 
-  const isGlobal = tenantId === GLOBAL_MSP.id
-  const roster = useMemo(
-    () => mspTenants.map((row) => (ownerOverrides[row.id] ? { ...row, owner: ownerOverrides[row.id] } : row)),
-    [ownerOverrides],
-  )
-
-  const activeTenants = useMemo(() => {
-    if (!isGlobal) {
-      return tenants.filter((item) => item.id === tenantId)
-    }
-    const selected = new Set(clientIds)
-    return tenants.filter((item) => selected.has(item.id))
-  }, [isGlobal, tenantId, clientIds])
+  const isGlobal = true
+  const tenantId = ENTERPRISE_SCOPE.id
+  const roster = mspTenants
+  const activeTenants = tenants
 
   const { units: liveUnits, deficits: liveDeficits, risks: liveRisks, healthy: liveHealthy } = useMemo(() => {
     const opts = { businessUnits, deficitRows, risks, healthyResources, jitter, range }
@@ -164,7 +149,7 @@ export default function App() {
       return applyTenant(tenant, opts)
     }
     return applyPortfolio(activeTenants, opts)
-  }, [isGlobal, tenantId, activeTenants, jitter, range])
+  }, [isGlobal, activeTenants, jitter, range])
 
   const filtered = useMemo(() => {
     const hunt = parseCopilotQuery(copilotQuery)
@@ -232,20 +217,6 @@ export default function App() {
     [copilotQuery, hunting, filtered, clustered, liveUnits, isGlobal],
   )
 
-  const envRisk = useMemo(() => environmentRiskLevel(liveRisks), [liveRisks])
-
-  const envRiskByTenant = useMemo(() => {
-    const map = {}
-    const opts = { businessUnits, deficitRows, risks, healthyResources, jitter, range }
-    for (const item of tenants) {
-      const { risks: tenantRisks } = applyPortfolio([item], opts)
-      map[item.id] = environmentRiskLevel(tenantRisks)
-    }
-    const all = applyPortfolio(tenants, opts)
-    map[GLOBAL_MSP.id] = environmentRiskLevel(all.risks)
-    return map
-  }, [jitter, range])
-
   const notifications = useMemo(() => {
     const items = []
     if (isGlobal) {
@@ -298,7 +269,7 @@ export default function App() {
     setFilters((prev) => ({ ...prev, [key]: value }))
   }
 
-  const overview = useMemo(() => (isGlobal ? null : tenantOverviewFor(tenantId, range)), [isGlobal, tenantId, range])
+  const overview = null
 
   const mspScoped = useMemo(() => {
     if (!isGlobal) {
@@ -311,10 +282,10 @@ export default function App() {
           if (item.dismissed) return false
           if (item.snoozeUntil && item.snoozeUntil > Date.now()) return false
           if (filters.priority && item.priority !== filters.priority) return false
+          if (filters.stack && (scenarioFor(item.issue)?.stage ?? item.category) !== filters.stack) return false
           return true
         })
     }
-    const tenantName = roster.find((t) => t.id === tenantId)?.name ?? tenants.find((t) => t.id === tenantId)?.name
     const industryIds =
       filters.businessUnit
         ? new Set(roster.filter((t) => t.industry === filters.businessUnit).map((t) => t.id))
@@ -323,18 +294,20 @@ export default function App() {
       if (item.dismissed) return false
       if (item.snoozeUntil && item.snoozeUntil > Date.now()) return false
       if (filters.priority && item.priority !== filters.priority) return false
+      if (filters.stack && (scenarioFor(item.issue)?.stage ?? item.category) !== filters.stack) return false
       if (industryIds) {
         return item.affectedTenants?.some((t) => industryIds.has(t.id)) || (item.tenantNames ?? []).some((name) => roster.some((t) => t.name === name && industryIds.has(t.id)))
       }
       return true
     })
-  }, [mspItems, isGlobal, tenantId, roster, filters.businessUnit, filters.priority, overview, tenantPatches])
+  }, [mspItems, isGlobal, roster, filters.businessUnit, filters.priority, filters.stack, overview, tenantPatches])
 
   const mspVisible = useMemo(() => {
     const q = queueSearch.trim().toLowerCase()
     return mspScoped.filter((item) => {
       if (filters.issue && item.issue !== filters.issue) return false
       if (filters.priority && item.priority !== filters.priority) return false
+      if (filters.stack && (scenarioFor(item.issue)?.stage ?? item.category) !== filters.stack) return false
       if (filters.provider) {
         const blob = `${item.issue} ${item.fixSummary} ${item.category}`.toLowerCase()
         const want = filters.provider.toLowerCase()
@@ -356,7 +329,7 @@ export default function App() {
       if (queueAge && item.ageBucket !== queueAge) return false
       return true
     })
-  }, [mspScoped, filters.issue, filters.priority, filters.provider, queueSearch, queueAiStatus, queueAge])
+  }, [mspScoped, filters.issue, filters.priority, filters.stack, filters.provider, queueSearch, queueAiStatus, queueAge])
 
   const historyRows = useMemo(() => {
     let rows = mspHistory
@@ -367,7 +340,7 @@ export default function App() {
       rows = rows.filter((row) => ids.has(row.tenantId))
     }
     return rows
-  }, [isGlobal, tenantId, filters.businessUnit, roster])
+  }, [isGlobal, filters.businessUnit, roster])
 
   const filterChips = useMemo(() => {
     const chips = []
@@ -454,17 +427,6 @@ export default function App() {
     },
   }
 
-  function onTenantChange(id) {
-    setTenantId(id)
-    setInvestigating(null)
-    setRemediating(null)
-    if (id === GLOBAL_MSP.id) setClientIds(ALL_CLIENT_IDS)
-    else setClientIds([id])
-    setFilters((prev) => ({ ...prev, resource: "" }))
-    setQueueAiStatus("")
-    setQueueAge("")
-  }
-
   function onCopilotHunt(query) {
     setHunting(true)
     if (page !== "overview") setPage("overview")
@@ -484,7 +446,7 @@ export default function App() {
         "Issue",
         "Tenant",
         "Provider",
-        "RTO Delta",
+        "MTTD-D",
         "Priority",
         "Score",
       ]
@@ -505,7 +467,7 @@ export default function App() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
-      a.download = "beacon-msp-top-risks.csv"
+      a.download = "detpulse-detection-health.csv"
       a.click()
       URL.revokeObjectURL(url)
       return
@@ -516,8 +478,8 @@ export default function App() {
       "Business Unit",
       "Issue",
       "Provider",
-      "RTO Delta",
-      "TBR",
+      "MTTD-D",
+      "MITRE gaps",
       "Priority",
       "Score",
     ]
@@ -541,15 +503,12 @@ export default function App() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = "beacon-top-risks.csv"
+    a.download = "detpulse-detection-health.csv"
     a.click()
     URL.revokeObjectURL(url)
   }
 
-  const scopeName = isGlobal
-    ? GLOBAL_MSP.name
-    : (tenants.find((t) => t.id === tenantId)?.name ?? "Tenant")
-  const rosterName = roster.find((t) => t.id === rosterTenantId)?.name
+  const scopeName = ENTERPRISE_SCOPE.name
   const pageTitle =
     page === "overview"
       ? "Overview"
@@ -557,21 +516,13 @@ export default function App() {
         ? "Remediation"
         : page === "settings"
           ? "Settings"
-          : isGlobal
-            ? (rosterTenantId ? "Summary" : "Tenants")
-            : "Resources"
-  const breadcrumb = !isGlobal
-    ? ["Tenants", scopeName]
-    : page === "tenants" && rosterTenantId
-      ? [GLOBAL_MSP.name, "Tenants", rosterName, "Summary"]
-      : [scopeName]
+          : "Resources"
 
   function onSetPage(id) {
     setPage(id)
-    setRosterTenantId(null)
-    if (id === "tenants") {
+    if (id === "resources") {
       setFilters((prev) =>
-        MSP_INDUSTRIES.includes(prev.businessUnit) ? prev : { ...prev, businessUnit: "" },
+        MSP_INDUSTRIES.includes(prev.businessUnit) ? { ...prev, businessUnit: "" } : prev,
       )
     } else if (id === "overview" && MSP_INDUSTRIES.includes(filters.businessUnit)) {
       setFilters((prev) => ({ ...prev, businessUnit: "" }))
@@ -582,7 +533,7 @@ export default function App() {
     return (
       <div className="flex min-h-svh items-center justify-center bg-[#f4f5f8] px-4">
         <div className="w-full max-w-sm rounded-2xl border border-slate-200/80 bg-white p-6 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
-          <p className="text-[16px] font-semibold tracking-tight text-slate-900">Beacon</p>
+          <p className="text-[16px] font-semibold tracking-tight text-slate-900">DetPulse</p>
           <p className="mt-1 text-[13px] text-slate-600">You have been signed out.</p>
           <button
             type="button"
@@ -598,20 +549,13 @@ export default function App() {
 
   return (
     <div className="flex min-h-svh bg-[#f4f5f8]">
-      <Sidebar
-        page={page}
-        setPage={onSetPage}
-        isGlobal={isGlobal}
-        tenants={SCOPE_TENANTS}
-        tenantId={tenantId}
-        onTenantChange={onTenantChange}
-        envRisk={envRisk}
-        envRiskByTenant={envRiskByTenant}
-      />
+      <Sidebar page={page} setPage={onSetPage} />
       <div className="flex min-w-0 flex-1 flex-col">
       <Header
         pageTitle={pageTitle}
-        breadcrumb={breadcrumb}
+        breadcrumb={[]}
+        environmentLabel={ENTERPRISE_SCOPE.label}
+        environmentName={scopeName}
         range={range}
         setRange={setRange}
         notifications={notifications}
@@ -646,22 +590,20 @@ export default function App() {
       )}
 
       <main className="px-3 pb-8 lg:px-4">
+        {(page === "overview" || page === "remediation") && (
+          <div className="mb-4">
+            <StackPipeline value={filters.stack} onChange={(stage) => setFilter("stack", stage)} />
+          </div>
+        )}
         {page === "overview" && isGlobal && (
           <div className="space-y-4">
+            <DetectionKpis />
             <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
               <div className="space-y-4">
                 <PortfolioHealth
                   range={range}
-                  onOpenStatus={(key) => {
-                    setTenantsStatusFilter(key)
-                    setRosterTenantId(null)
-                    setPage("tenants")
-                  }}
-                  onOpenTenant={(id) => {
-                    setTenantsStatusFilter("all")
-                    setPage("tenants")
-                    setRosterTenantId(id)
-                  }}
+                  onOpenStatus={() => setPage("resources")}
+                  onOpenTenant={() => setPage("resources")}
                 />
                 <AiEfficiencyHero
                   range={range}
@@ -766,50 +708,11 @@ export default function App() {
               setReviewing(null)
               setRollbackEntry(row)
             }}
-            onOpenTenant={(id) => {
-              setTenantsStatusFilter("all")
-              setPage("tenants")
-              setRosterTenantId(id)
-            }}
+            onOpenTenant={() => setPage("resources")}
             {...queueHandlers}
           />
         )}
-        {page === "tenants" && isGlobal && (
-          <div className="space-y-4">
-            {rosterTenantId ? (
-              <TenantDetail
-                tenant={roster.find((t) => t.id === rosterTenantId) ?? roster[0]}
-                range={range}
-                onBack={() => setRosterTenantId(null)}
-                onAssign={(id, person) => {
-                  setOwnerOverrides((prev) => ({ ...prev, [id]: person }))
-                  flash(`Assigned ${person.name} as owner`)
-                }}
-                onOpenQueue={(queueId) => {
-                  const item = mspItems.find((row) => row.id === queueId)
-                  if (!item) {
-                    flash("No matching Action queue item")
-                    return
-                  }
-                  setTenantId(GLOBAL_MSP.id)
-                  setRollbackEntry(null)
-                  setReviewing(item)
-                  openRemediation("queue")
-                }}
-              />
-            ) : (
-              <TenantsRoster
-                tenants={roster}
-                statusFilter={tenantsStatusFilter}
-                onStatusFilter={setTenantsStatusFilter}
-                industry={filters.businessUnit}
-                onOpen={setRosterTenantId}
-                range={range}
-              />
-            )}
-          </div>
-        )}
-        {page === "tenants" && !isGlobal && (
+        {page === "resources" && (
           <ResourcesPage
             rows={resourceRows}
             selectedId={investigating?.id ?? remediating?.id}

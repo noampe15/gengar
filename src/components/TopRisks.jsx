@@ -74,8 +74,8 @@ export default function TopRisks({
                   <th className="pb-3 font-medium">Business Unit</th>
                 </>
               )}
-              <th className="pb-3 font-medium">RTO Delta</th>
-              <th className="pb-3 font-medium">TBR</th>
+              <th className="pb-3 font-medium">MTTD-D</th>
+              <th className="pb-3 font-medium">MITRE gaps</th>
               <th className="pb-3 font-medium">Score</th>
               <th className="pb-3 font-medium">Priority</th>
               <th className="pb-3 text-right font-medium">Action</th>
@@ -210,7 +210,7 @@ export default function TopRisks({
               </button>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <SeverityBadge severity={row.priority} />
-                <span className="text-[12px] text-[#ea580c]">+{row.rtoDelta}h RTO</span>
+                <span className="text-[12px] text-[#ea580c]">{row.rtoDelta} MTTD-D</span>
                 <span className="text-[12px] text-slate-400">{row.tbr}</span>
                 <div className="ml-auto">
                   {msp ? (

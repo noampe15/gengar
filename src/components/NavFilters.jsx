@@ -3,6 +3,9 @@ import FilterMenu from "./FilterMenu"
 
 export function visibleFilterKeys(page, isGlobal, remediationView = "queue") {
   if (page === "settings") return []
+  if (page === "resources") {
+    return ["resource", "type", "issue", "provider", "businessUnit", "priority"]
+  }
   if (page === "tenants") {
     return isGlobal
       ? ["industry"]
@@ -98,7 +101,7 @@ export function ExtraFilters({
     provider: (
       <FilterMenu
         key="provider"
-        label="Provider"
+        label="Stack"
         options={options.provider}
         value={filters.provider}
         onChange={(v) => setFilter("provider", v)}

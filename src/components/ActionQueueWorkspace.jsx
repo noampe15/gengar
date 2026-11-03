@@ -7,6 +7,7 @@ import AssignMenu from "./AssignMenu"
 import FilterMenu from "./FilterMenu"
 import TenantHoverList from "./TenantHoverList"
 import { SeverityBadge } from "./Badges"
+import { scenarioFor } from "../detection"
 import {
   QUEUE_AGE_BUCKETS,
   QUEUE_AI_STATUSES,
@@ -23,7 +24,7 @@ const GRID_BULK =
 
 const COLUMNS = [
   { key: "issue", label: "Issue", sortable: true, defaultDir: "asc" },
-  { key: "blast", label: "Blast radius", sortable: true, defaultDir: "desc" },
+  { key: "blast", label: "Tenants affected", sortable: true, defaultDir: "desc" },
   { key: "sla", label: "SLA", sortable: true, defaultDir: "asc" },
   { key: "confidence", label: "AI confidence", sortable: true, defaultDir: "desc" },
   { key: "owner", label: "Owner", sortable: false },
@@ -388,8 +389,8 @@ export default function ActionQueueWorkspace({
               <p className="inline-flex items-center gap-1 text-[12px] text-slate-600" data-pin="queue-rank">
                 Ranked by SLA risk × tenants affected
                 <InfoTooltip label="How the queue is ranked">
-                  Score = (1 / hours to RTO breach) × tenants affected. A High item hitting 14 tenants can outrank a
-                  Critical hitting one. Already-breached items rank first, then by how overdue they are × blast radius.
+                  Score = (1 / hours to detection-SLA breach) × tenants affected. A High item hitting 14 tenants can outrank a
+                  Critical hitting one. Already-breached items rank first, then by how overdue they are × tenants affected.
                 </InfoTooltip>
               </p>
             </div>
@@ -513,11 +514,30 @@ export default function ActionQueueWorkspace({
                     )}
                     <div role="cell" className="min-w-0 py-2.5">
                       <div className="flex min-w-0 flex-wrap items-center gap-2">
-                        <p className="min-w-0 text-[14px] font-bold leading-snug text-slate-900">{item.issue}</p>
+                        <p className="min-w-0 text-[14px] font-bold leading-snug text-slate-900">
+                          {scenarioFor(item.issue) ? `[${scenarioFor(item.issue).failureClass}] ` : ""}
+                          {item.issue}
+                        </p>
                         <SeverityBadge severity={item.priority} label={`${item.score} ${item.priority}`} />
                       </div>
+                      {scenarioFor(item.issue) && (
+                        <div className="mt-1 space-y-0.5 text-[12px] leading-snug text-slate-600">
+                          <p className="truncate">
+                            <span className="font-medium text-slate-500">Pipeline: </span>
+                            {scenarioFor(item.issue).lineage}
+                          </p>
+                          <p className="truncate">
+                            <span className="font-medium text-slate-500">Impact: </span>
+                            {scenarioFor(item.issue).impact}
+                          </p>
+                          <p className="line-clamp-2">
+                            <span className="font-medium text-slate-500">Root cause: </span>
+                            {scenarioFor(item.issue).rootCause}
+                          </p>
+                        </div>
+                      )}
                       <p className="mt-0.5 truncate text-[12.5px] text-slate-500">
-                        <span className="font-medium">AI would: </span>
+                        <span className="font-medium">Proposed fix: </span>
                         {item.fixSummary}
                       </p>
                       {item.reason && (
