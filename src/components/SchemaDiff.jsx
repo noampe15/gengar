@@ -13,10 +13,11 @@ export default function SchemaDiff({ panels, branch = "fix/schema-coalesce-t1059
       <div className="grid gap-3 lg:grid-cols-2">
         {panels.map((panel) => {
           const repaired = /repaired/i.test(panel.title)
+          const label = repaired ? "AI Agent Proposed Repair" : "Broken Production Rule (KQL)"
           return (
             <section key={panel.title} className="min-w-0">
               <div className="flex items-center justify-between gap-2">
-                <h3 className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{panel.title}</h3>
+                <h3 className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</h3>
                 <CopyQueryButton text={panel.code} />
               </div>
               <pre

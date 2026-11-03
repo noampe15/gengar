@@ -162,26 +162,17 @@ export default function Header({
   const showAllFilters = visibleFilterKeys(page, isGlobal, remediationView).length > 0
 
   return (
-    <header className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/80 bg-[#f4f5f8] px-3 py-2.5 lg:px-4">
+    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 bg-slate-50 px-3 py-3 lg:px-4">
       <div className="min-w-0">
-        {breadcrumb?.length > 0 && (
-          <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1 text-[12px] text-slate-500">
-            {breadcrumb.map((crumb, i) => (
-              <span key={`${crumb}-${i}`} className="flex items-center gap-1">
-                {i > 0 && (
-                  <span aria-hidden="true" className="text-slate-300">
-                    /
-                  </span>
-                )}
-                <span className={i === breadcrumb.length - 1 ? "font-medium text-slate-700" : ""}>{crumb}</span>
-              </span>
-            ))}
-          </nav>
-        )}
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6d5cff]">DetPulse</p>
-        <h1 className="truncate text-[16px] font-semibold tracking-tight text-slate-900">{pageTitle}</h1>
-        <p className="mt-0.5 truncate text-[12px] text-slate-500">
-          <span className="font-medium text-slate-600">{environmentLabel}:</span> {environmentName}
+        <h1 className="truncate font-mono text-[13px] font-semibold tracking-tight text-slate-900">
+          DETPULSE <span className="font-normal text-slate-400">//</span> Detection Resilience Plane
+        </h1>
+        <p className="mt-1 flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-medium text-emerald-700">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
+            Scope: Enterprise Core Production (US-East)
+          </span>
+          <span className="text-[12px] text-slate-400">{pageTitle}</span>
         </p>
       </div>
 

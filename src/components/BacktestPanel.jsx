@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from "react"
 import { Play } from "lucide-react"
 
-export default function BacktestPanel({ metrics, title }) {
+export default function BacktestPanel({ title, buttonLabel = "Run 30-Day Historical Replay" }) {
   const [phase, setPhase] = useState("idle")
   const timer = useRef(null)
 
   useEffect(() => {
     setPhase("idle")
     return () => window.clearTimeout(timer.current)
-  }, [metrics?.recall, title])
+  }, [title])
 
   function run() {
     window.clearTimeout(timer.current)
@@ -20,7 +20,7 @@ export default function BacktestPanel({ metrics, title }) {
     <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="text-[13px] font-semibold text-slate-900">Ground Truth Historical Backtest</h3>
+          <h3 className="text-[13px] font-semibold text-slate-900">30-day historical replay</h3>
           <p className="mt-0.5 text-[12px] text-slate-500">
             {title ? `${title} · ` : ""}30-day historical replay
           </p>
@@ -32,12 +32,12 @@ export default function BacktestPanel({ metrics, title }) {
           className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#6d5cff] px-3 text-[12px] font-semibold text-white outline-none hover:bg-[#5b4cf0] disabled:opacity-60 focus-visible:ring-2 focus-visible:ring-[#6d5cff]"
         >
           <Play className="h-3.5 w-3.5 fill-current" />
-          {phase === "running" ? "Replaying…" : "Run Simulation"}
+          {phase === "running" ? "Replaying…" : buttonLabel}
         </button>
       </div>
       {phase === "idle" ? (
         <p className="mt-3 text-[12px] text-slate-500">
-          Replay the repaired query against {metrics?.sample ?? "historical telemetry"} before opening the hotfix.
+          Replay the repaired query against 30 days of historical telemetry before opening the hotfix.
         </p>
       ) : null}
       {phase === "running" ? (
@@ -49,11 +49,10 @@ export default function BacktestPanel({ metrics, title }) {
         </div>
       ) : null}
       {phase === "done" ? (
-        <dl className="mt-3 grid gap-2 sm:grid-cols-3">
+        <dl className="mt-3 grid gap-2 sm:grid-cols-2">
           {[
-            ["Recall", metrics.recall],
-            ["FP reduction", metrics.fpReduction],
-            ["Compute cost", metrics.compute],
+            ["True Positive Recall", "100%"],
+            ["Noise Reduction", "−74%"],
           ].map(([label, value]) => (
             <div key={label} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
               <dt className="text-[11px] font-medium text-slate-500">{label}</dt>

@@ -703,7 +703,7 @@ export const tenants = [
 export const ENTERPRISE_SCOPE = {
   id: "enterprise-production-us-east",
   label: "Scope",
-  name: "Enterprise Production // US-East",
+  name: "Enterprise Core Production (US-East)",
 }
 
 export const ENTERPRISE_TELEMETRY = {

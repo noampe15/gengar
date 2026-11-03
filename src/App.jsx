@@ -534,7 +534,7 @@ export default function App() {
 
   if (!signedIn) {
     return (
-      <div className="flex min-h-svh items-center justify-center bg-[#f4f5f8] px-4">
+      <div className="flex min-h-svh items-center justify-center bg-slate-50 px-4">
         <div className="w-full max-w-sm rounded-2xl border border-slate-200/80 bg-white p-6 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
           <p className="text-[16px] font-semibold tracking-tight text-slate-900">DetPulse</p>
           <p className="mt-1 text-[13px] text-slate-600">You have been signed out.</p>
@@ -551,7 +551,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex min-h-svh bg-[#f4f5f8]">
+    <div className="flex min-h-svh bg-slate-50">
       <Sidebar page={page} setPage={onSetPage} />
       <div className="flex min-w-0 flex-1 flex-col">
       <Header

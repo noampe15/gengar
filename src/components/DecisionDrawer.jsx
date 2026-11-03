@@ -119,12 +119,11 @@ export default function DecisionDrawer({ item, historyEntry, onClose, onDecide }
       >
         <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-[#6d5cff]">
-              {item.agent ? "AI agent remediation" : "Human-in-the-loop review"}
-            </p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Detection contract</p>
             <h2 id="decision-drawer-title" className="mt-1 text-[16px] font-semibold text-slate-900">
-              {item.issue}
+              {item.agent ? "SecOps Detection Engineering Agent" : item.issue}
             </h2>
+            {item.agent ? <p className="mt-1 text-[13px] text-slate-600">{item.issue}</p> : null}
             <p className="mt-0.5 text-[12px] text-slate-500">
               {item.confidence}% confidence · {item.reversible ? "Reversible" : "Irreversible"}
             </p>
@@ -171,7 +170,7 @@ export default function DecisionDrawer({ item, historyEntry, onClose, onDecide }
           ) : null}
           <section>
             <h3 className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Security scope</h3>
-            <p className="mt-1.5 text-[13px] font-medium text-slate-800">Scope: Enterprise Production // US-East</p>
+            <p className="mt-1.5 text-[13px] font-medium text-slate-800">Scope: Enterprise Core Production (US-East)</p>
             {item.scopeItems?.length ? (
               <ul className="mt-2 space-y-1.5">
                 {item.scopeItems.map((t) => (
@@ -204,6 +203,12 @@ export default function DecisionDrawer({ item, historyEntry, onClose, onDecide }
           </section>
         </div>
         <div className="flex flex-col gap-2 border-t border-slate-100 px-5 py-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-md bg-slate-900 px-2 py-1 font-mono text-[11px] text-slate-100">{branch}</span>
+            <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700">
+              Required Reviewer: Detection Engineering Lead
+            </span>
+          </div>
           <button
             type="button"
             onClick={() => setPrOpened(true)}

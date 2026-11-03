@@ -59,8 +59,7 @@ export const SCENARIOS = {
     branch: "fix/schema-coalesce-t1059",
     lineage: "CrowdStrike Falcon → Cribl Stream → Microsoft Sentinel",
     impact: "Match Volume Dropped to 0% (Silent Blind Spot)",
-    rootCause:
-      "Upstream Schema Drift: Falcon v7.14 renamed 'ProcessCommandLine' to 'process.cmd_line'; Cribl parser failed to normalize to ASIM.",
+    rootCause: "Upstream Schema Drift: Falcon v7.14 renamed 'ProcessCommandLine' to 'process.cmd_line'.",
     summary:
       "The production KQL rule still filters on ProcessCommandLine, which Falcon v7.14 no longer populates. Cribl should map process.cmd_line into the ASIM ProcessCommandLine field before the rule evaluates.",
     panels: [
@@ -255,10 +254,11 @@ export const DETECTION_ISSUES = [
   {
     id: "schema-drift",
     title: PS_RULE,
-    failureClass: "Upstream Schema Drift",
+    failureClass: "Silent Rule Breakage",
     technique: "T1059.001",
     priority: "Critical",
     confidence: 93,
+    stages: ["telemetry", "pipeline", "siem"],
     nodes: ["crowdstrike-edr", "cribl", "sentinel"],
     fixSummary: "Restore ASIM ProcessCommandLine from process.cmd_line",
     rollback: "Revert the Cribl ASIM pack so ProcessCommandLine is no longer mapped from process.cmd_line.",
@@ -267,11 +267,14 @@ export const DETECTION_ISSUES = [
   {
     id: "lookup-drift",
     title: OKTA_RULE,
-    failureClass: "Environment Lookup Drift",
+    failureClass: "Alert Storm / Precision Drop",
     technique: "T1078",
     priority: "High",
     confidence: 91,
+    stages: ["telemetry", "siem"],
     nodes: ["okta", "snowflake", "splunk"],
+    impact: "False Positive Spike (+340% / 142 alerts/hr)",
+    rootCause: "Environment Drift: New corporate Cloudflare WARP egress IP missing from lookup.",
     fixSummary: "Add Cloudflare WARP egress ranges to trusted_corporate_subnets.csv",
     rollback: "Remove the WARP CIDR from trusted_corporate_subnets.csv and republish the lookup.",
     backtest: { recall: "99.1%", fpReduction: "−86%", compute: "1.1 CU", sample: "640k Okta sessions" },
@@ -279,11 +282,13 @@ export const DETECTION_ISSUES = [
   {
     id: "payload-mismatch",
     title: LSASS_RULE,
-    failureClass: "Payload Schema Mismatch",
+    failureClass: "SOAR Automation Failure",
     technique: "T1003.001",
     priority: "High",
     confidence: 90,
+    stages: ["telemetry", "siem", "soar"],
     nodes: ["sentinel", "torq"],
+    rootCause: "Payload Schema Mismatch: KQL projection dropped 'DeviceId' required by webhook.",
     fixSummary: "Project DeviceId back into the Sentinel incident payload",
     rollback: "Restore the prior analytics-rule projection that omitted DeviceId.",
     backtest: { recall: "96.4%", fpReduction: "−4%", compute: "0.6 CU", sample: "48k DeviceProcessEvents" },
@@ -291,11 +296,13 @@ export const DETECTION_ISSUES = [
   {
     id: "ingestion-lag",
     title: IAM_RULE,
-    failureClass: "Ingestion Lag Stall",
+    failureClass: "Telemetry Ingestion Stall",
     technique: "T1078.004",
     priority: "Medium",
     confidence: 88,
+    stages: ["telemetry", "pipeline", "siem"],
     nodes: ["cloudtrail", "cribl", "snowflake"],
+    rootCause: "IAM role session policy expired on Cribl S3 pull worker.",
     fixSummary: "Renew the Cribl S3 pull worker session policy",
     rollback: "Expire the renewed session policy and pause the Cribl S3 pull worker.",
     backtest: { recall: "94.2%", fpReduction: "−9%", compute: "2.4 CU", sample: "4.5h CloudTrail catch-up" },
@@ -307,6 +314,18 @@ export const DETECTION_ISSUES = [
 
 export function issueByTitle(title) {
   return DETECTION_ISSUES.find((issue) => issue.title === title) ?? null
+}
+
+export const TOPOLOGY_NODES = [
+  { id: "telemetry", label: "Telemetry: EDR/IdP/Cloud" },
+  { id: "pipeline", label: "Pipeline: Cribl Stream v2.4" },
+  { id: "siem", label: "SIEM: Microsoft Sentinel / Snowflake" },
+  { id: "soar", label: "SOAR: Torq Automation" },
+]
+
+export function issuesForTopology(nodeId) {
+  if (!nodeId) return DETECTION_ISSUES
+  return DETECTION_ISSUES.filter((issue) => issue.stages?.includes(nodeId))
 }
 
 export function issuesForNode(nodeId) {
