@@ -1,21 +1,31 @@
 import { useId } from "react"
 import { areaPath, seriesPoints, smoothPath } from "./ui"
 
-const DRIFT_DAYS = ["Oct 28", "Oct 29", "Oct 30", "Oct 31", "Nov 1", "Nov 2", "Nov 3"]
-const DRIFT_NOTES = [null, null, null, null, "Nov 1 · WARP Cutover", "Nov 2 · AWS IAM", "Nov 3 · Falcon v7.14"]
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+const NOISE_VOLUMES = [
+  { raw: 1680, suppressed: 1180 },
+  { raw: 2140, suppressed: 1620 },
+  { raw: 1920, suppressed: 1420 },
+  { raw: 2280, suppressed: 1680 },
+  { raw: 1580, suppressed: 1200 },
+]
+const DRIFT_EVENTS = ["WARP Cutover", "AWS IAM", "Falcon v7.14"]
+
+function dayLabel(offsetFromToday) {
+  const date = new Date()
+  date.setHours(12, 0, 0, 0)
+  date.setDate(date.getDate() + offsetFromToday)
+  return `${MONTHS[date.getMonth()]} ${date.getDate()}`
+}
+
+function lastDays(count) {
+  return Array.from({ length: count }, (_, index) => dayLabel(index - count + 1))
+}
 
 const EVENTS = [
   { id: "falcon", name: "Falcon v7.14 Upgrade", domain: "Endpoint", impact: "4 Rules Blind", impactClass: "text-red-600" },
   { id: "warp", name: "Cloudflare WARP Cutover", domain: "Identity", impact: "+340% Noise", impactClass: "text-amber-600" },
   { id: "iam", name: "AWS IAM Role Rotation", domain: "Cloud", impact: "4.5h Ingestion Lag", impactClass: "text-orange-600" },
-]
-
-const NOISE_DAYS = [
-  { day: "Oct 30", raw: 1680, suppressed: 1180 },
-  { day: "Oct 31", raw: 2140, suppressed: 1620 },
-  { day: "Nov 1", raw: 1920, suppressed: 1420 },
-  { day: "Nov 2", raw: 2280, suppressed: 1680 },
-  { day: "Nov 3", raw: 1580, suppressed: 1200 },
 ]
 
 const RAIL = [
@@ -109,18 +119,18 @@ export default function Overview() {
             <span className="shrink-0 rounded-full border border-emerald-200/60 bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700">-74% Noise</span>
           </div>
           <NoiseHistogram />
-          <div className="mt-2 grid grid-cols-3 gap-2 border-t border-slate-200/60 pt-2">
-            <div className="rounded-xl border border-slate-200/60 bg-white p-2 text-center">
+          <div className="mt-2 grid grid-cols-3 gap-2">
+            <div className="rounded-2xl border border-emerald-100/80 bg-gradient-to-b from-white to-emerald-50/40 p-2.5 text-center">
               <span className="font-mono text-sm font-bold text-emerald-600">-1,420</span>
-              <span className="block text-[10px] text-slate-400">Alerts Cut/d</span>
+              <span className="mt-0.5 block text-[10px] text-slate-400">Alerts Cut/d</span>
             </div>
-            <div className="rounded-xl border border-slate-200/60 bg-white p-2 text-center">
+            <div className="rounded-2xl border border-indigo-100/80 bg-gradient-to-b from-white to-indigo-50/40 p-2.5 text-center">
               <span className="font-mono text-sm font-bold text-indigo-600">100%</span>
-              <span className="block text-[10px] text-slate-400">TP Recall</span>
+              <span className="mt-0.5 block text-[10px] text-slate-400">TP Recall</span>
             </div>
-            <div className="rounded-xl border border-slate-200/60 bg-white p-2 text-center">
+            <div className="rounded-2xl border border-slate-200/70 bg-gradient-to-b from-white to-slate-50 p-2.5 text-center">
               <span className="font-mono text-sm font-bold text-slate-800">98.4%</span>
-              <span className="block text-[10px] text-slate-400">Precision</span>
+              <span className="mt-0.5 block text-[10px] text-slate-400">Precision</span>
             </div>
           </div>
         </article>
@@ -166,6 +176,8 @@ function DriftChart() {
   const rawId = useId().replace(/:/g, "")
   const width = 320
   const height = 120
+  const days = lastDays(7)
+  const notes = days.map((label, index) => (index < 4 ? null : `${label} · ${DRIFT_EVENTS[index - 4]}`))
   const values = [8, 10, 12, 16, 42, 68, 96]
   const points = seriesPoints(values, width, height, { t: 16, r: 16, b: 10, l: 16 }, { min: 0, max: 100 })
   const line = smoothPath(points)
@@ -173,7 +185,7 @@ function DriftChart() {
   return (
     <div className="my-2 flex min-h-[90px] flex-1 flex-col rounded-2xl border border-slate-200/60 bg-white px-3 pt-3 pb-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
       <div className="relative min-h-0 flex-1">
-        <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="absolute inset-0 h-full w-full" role="img" aria-label="7-day drift curve, low through Oct 30, rising on Nov 1 and peaking on Nov 3">
+        <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="absolute inset-0 h-full w-full" role="img" aria-label={`7-day drift curve, low through ${days[2]}, rising on ${days[4]} and peaking on ${days[6]}`}>
           <defs>
             <linearGradient id={`drift-fill-${rawId}`} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.32" />
@@ -194,8 +206,8 @@ function DriftChart() {
           if (!mark) return null
           return (
             <span
-              key={DRIFT_DAYS[index]}
-              title={DRIFT_NOTES[index]}
+              key={days[index]}
+              title={notes[index]}
               className="absolute size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-md"
               style={{ left: `${(point.x / width) * 100}%`, top: `${(point.y / height) * 100}%`, background: mark.fill, boxShadow: `0 0 0 4px ${mark.ring}` }}
             />
@@ -203,7 +215,7 @@ function DriftChart() {
         })}
       </div>
       <div className="mt-2 flex justify-between font-mono text-[10px] text-slate-400">
-        {DRIFT_DAYS.map((label, index) => (
+        {days.map((label, index) => (
           <span key={label} className={DRIFT_MARKS[index] ? "font-semibold text-slate-600" : ""}>{label}</span>
         ))}
       </div>
@@ -212,39 +224,67 @@ function DriftChart() {
 }
 
 function NoiseHistogram() {
-  const scale = Math.max(...NOISE_DAYS.map((entry) => entry.raw))
+  const days = lastDays(NOISE_VOLUMES.length)
+  const series = NOISE_VOLUMES.map((entry, index) => ({ ...entry, day: days[index] }))
+  const scale = Math.max(...series.map((entry) => entry.raw))
   return (
-    <div className="my-2 flex min-h-[130px] flex-1 flex-col rounded-2xl border border-slate-200/60 bg-white px-3 pt-3 pb-2">
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[10px] text-slate-500">
-        <span className="inline-flex items-center gap-1.5"><span className="size-2 rounded-full bg-gradient-to-b from-amber-300 to-amber-500" /> Raw SIEM Alert Storm</span>
-        <span className="inline-flex items-center gap-1.5"><span className="size-2 rounded-full bg-gradient-to-b from-emerald-300 to-emerald-500" /> AI-Suppressed Volume</span>
+    <div className="relative my-2 flex min-h-[130px] flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200/70 bg-gradient-to-b from-white via-white to-slate-50/90 px-3.5 pt-3 pb-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-100 bg-amber-50/80 px-2 py-0.5 text-[10px] font-medium text-amber-800">
+          <span className="size-1.5 rounded-full bg-gradient-to-b from-amber-300 to-amber-500 shadow-[0_0_0_3px_rgba(245,158,11,0.18)]" />
+          Raw SIEM
+        </span>
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50/80 px-2 py-0.5 text-[10px] font-medium text-emerald-800">
+          <span className="size-1.5 rounded-full bg-gradient-to-b from-emerald-300 to-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.18)]" />
+          AI suppressed
+        </span>
       </div>
       <div className="mt-3 flex min-h-0 flex-1 flex-col">
-        <div className="flex min-h-0 flex-1 gap-1.5">
-          <div className="relative w-9 shrink-0 font-mono text-[9px] text-slate-400">
+        <div className="flex min-h-0 flex-1 gap-2">
+          <div className="relative w-8 shrink-0 font-mono text-[9px] text-slate-400">
             <span className="absolute top-0 right-0">{scale.toLocaleString()}</span>
+            <span className="absolute top-1/2 right-0 -translate-y-1/2">{Math.round(scale / 2).toLocaleString()}</span>
             <span className="absolute right-0 bottom-0">0</span>
           </div>
-          <div className="flex min-h-0 flex-1 items-end justify-between gap-1">
-            {NOISE_DAYS.map((entry, index) => {
-              const share = Math.round((entry.suppressed / entry.raw) * 100)
-              return (
-                <div key={entry.day} className="group relative flex h-full min-w-0 flex-1 items-end justify-center gap-1 rounded-xl bg-slate-50/80 px-0.5">
-                  <span className={`pointer-events-none absolute bottom-[calc(100%-8px)] z-10 hidden rounded-lg bg-[#0B132B] px-2.5 py-1.5 text-[10px] leading-snug whitespace-nowrap text-white shadow-lg group-hover:block ${index === 0 ? "left-0" : index === NOISE_DAYS.length - 1 ? "right-0" : "left-1/2 -translate-x-1/2"}`}>
-                    <span className="block font-semibold">{entry.day}</span>
-                    <span className="block text-amber-200">Raw {entry.raw.toLocaleString()}</span>
-                    <span className="block text-emerald-200">Suppressed {entry.suppressed.toLocaleString()}</span>
-                    <span className="block text-white/70">{share}% of raw volume</span>
-                  </span>
-                  <div className="w-2.5 rounded-t-md bg-gradient-to-t from-amber-500 to-amber-300 shadow-[0_6px_12px_-6px_rgba(245,158,11,0.8)] sm:w-3" style={{ height: `${(entry.raw / scale) * 100}%` }} />
-                  <div className="w-2.5 rounded-t-md bg-gradient-to-t from-emerald-500 to-emerald-300 shadow-[0_6px_12px_-6px_rgba(16,185,129,0.8)] sm:w-3" style={{ height: `${(entry.suppressed / scale) * 100}%` }} />
-                </div>
-              )
-            })}
+          <div className="relative min-h-0 min-w-0 flex-1">
+            <div className="pointer-events-none absolute inset-0 flex flex-col justify-between py-px">
+              {[0, 1, 2].map((line) => (
+                <span key={line} className="block h-px w-full bg-slate-200/80" style={{ backgroundImage: "repeating-linear-gradient(90deg, rgb(226 232 240) 0 4px, transparent 4px 8px)" }} />
+              ))}
+            </div>
+            <div className="relative z-[1] flex h-full items-end justify-between gap-1.5">
+              {series.map((entry, index) => {
+                const share = Math.round((entry.suppressed / entry.raw) * 100)
+                return (
+                  <div key={entry.day} className="group relative flex h-full min-w-0 flex-1 items-end justify-center gap-[3px] rounded-2xl px-1 pt-1 transition hover:bg-slate-900/[0.03]">
+                    <span className={`pointer-events-none absolute bottom-[calc(100%-6px)] z-10 hidden rounded-xl bg-[#0B132B]/95 px-2.5 py-1.5 text-[10px] leading-snug whitespace-nowrap text-white shadow-xl ring-1 ring-white/10 group-hover:block ${index === 0 ? "left-0" : index === series.length - 1 ? "right-0" : "left-1/2 -translate-x-1/2"}`}>
+                      <span className="block font-semibold">{entry.day}</span>
+                      <span className="mt-0.5 block text-amber-200">Raw {entry.raw.toLocaleString()}</span>
+                      <span className="block text-emerald-200">Suppressed {entry.suppressed.toLocaleString()}</span>
+                      <span className="block text-white/55">{share}% of raw volume</span>
+                    </span>
+                    <div
+                      className="relative w-[7px] overflow-hidden rounded-full sm:w-2"
+                      style={{ height: `${(entry.raw / scale) * 100}%` }}
+                    >
+                      <span className="absolute inset-0 bg-gradient-to-t from-amber-600 via-amber-400 to-amber-200" />
+                      <span className="absolute inset-x-[2px] top-[3px] h-2 rounded-full bg-white/50" />
+                    </div>
+                    <div
+                      className="relative w-[7px] overflow-hidden rounded-full sm:w-2"
+                      style={{ height: `${(entry.suppressed / scale) * 100}%` }}
+                    >
+                      <span className="absolute inset-0 bg-gradient-to-t from-emerald-600 via-emerald-400 to-emerald-200" />
+                      <span className="absolute inset-x-[2px] top-[3px] h-2 rounded-full bg-white/50" />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
           </div>
         </div>
-        <div className="mt-1.5 ml-10 flex justify-between gap-1 font-mono text-[10px] text-slate-400">
-          {NOISE_DAYS.map((entry) => <span key={entry.day} className="flex-1 text-center">{entry.day}</span>)}
+        <div className="mt-2 ml-10 flex justify-between gap-1 text-[10px] font-medium text-slate-400">
+          {series.map((entry) => <span key={entry.day} className="flex-1 text-center tracking-tight">{entry.day}</span>)}
         </div>
       </div>
     </div>
