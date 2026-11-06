@@ -240,15 +240,9 @@ function NoiseHistogram() {
         </span>
       </div>
       <div className="mt-3 flex min-h-0 flex-1 flex-col">
-        <div className="flex min-h-0 flex-1 gap-2">
-          <div className="relative w-8 shrink-0 font-mono text-[9px] text-slate-400">
-            <span className="absolute top-0 right-0">{scale.toLocaleString()}</span>
-            <span className="absolute top-1/2 right-0 -translate-y-1/2">{Math.round(scale / 2).toLocaleString()}</span>
-            <span className="absolute right-0 bottom-0">0</span>
-          </div>
-          <div className="relative min-h-0 min-w-0 flex-1">
+        <div className="relative min-h-0 min-w-0 flex-1">
             <div className="pointer-events-none absolute inset-0 flex flex-col justify-between py-px">
-              {[0, 1, 2].map((line) => (
+              {[0, 1].map((line) => (
                 <span key={line} className="block h-px w-full bg-slate-200/80" style={{ backgroundImage: "repeating-linear-gradient(90deg, rgb(226 232 240) 0 4px, transparent 4px 8px)" }} />
               ))}
             </div>
@@ -281,9 +275,8 @@ function NoiseHistogram() {
                 )
               })}
             </div>
-          </div>
         </div>
-        <div className="mt-2 ml-10 flex justify-between gap-1 text-[10px] font-medium text-slate-400">
+        <div className="mt-2 flex justify-between gap-1 text-[10px] font-medium text-slate-400">
           {series.map((entry) => <span key={entry.day} className="flex-1 text-center tracking-tight">{entry.day}</span>)}
         </div>
       </div>
