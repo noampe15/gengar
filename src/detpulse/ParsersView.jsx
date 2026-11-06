@@ -16,8 +16,8 @@ export default function ParsersView() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-[20px] font-semibold tracking-tight text-slate-900">Parsers & Schema Lineage</h1>
-        <p className="text-[13px] text-slate-600">Raw vendor keys, the Cribl transform, and the schema the detection was written against.</p>
+        <h1 className="text-2xl font-bold text-[#0B132B]">Parsers & Schema Lineage</h1>
+        <p className="mt-1 text-sm text-slate-500">Raw vendor keys, the Cribl transform, and the schema the detection was written against.</p>
       </div>
       <div className="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
         <Card className="p-2">
@@ -35,7 +35,7 @@ export default function ParsersView() {
                       setSourceId(item.id)
                       setPreview(false)
                     }}
-                    className={`w-full rounded-lg px-2 py-2.5 text-left ${selected ? "bg-slate-50" : "hover:bg-slate-50"}`}
+                    className={`w-full rounded-xl px-2.5 py-2.5 text-left transition ${selected ? "bg-white shadow-sm ring-1 ring-slate-200/80" : "hover:bg-slate-50"}`}
                   >
                     <span className="block text-[13px] font-semibold text-slate-900">{item.name}</span>
                     <span className="mt-0.5 block font-mono text-[10px] text-slate-400">{item.pack}</span>
@@ -59,7 +59,7 @@ export default function ParsersView() {
             <button
               type="button"
               onClick={() => setPreview((current) => !current)}
-              className="inline-flex h-8 items-center rounded-lg border border-indigo-200 bg-indigo-50 px-3 text-[12px] font-semibold text-indigo-700"
+              className="inline-flex h-8 items-center rounded-xl border border-indigo-200/70 bg-indigo-50 px-3 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100"
             >
               Generate Cribl Regex / Coalesce Function
             </button>
@@ -70,7 +70,7 @@ export default function ParsersView() {
               <CodeBlock className="mt-1.5">{source.rawPreview}</CodeBlock>
             </div>
             {source.impact ? <p className="text-[12.5px] text-slate-600">Downstream impact: {source.impact}</p> : null}
-            <div className="overflow-x-auto rounded-lg border border-slate-200">
+            <div className="overflow-x-auto rounded-2xl border border-slate-200/70">
               <table className="w-full min-w-[640px] text-left">
                 <thead>
                   <tr className="border-b border-slate-100 text-[11px] font-medium tracking-wide text-slate-400 uppercase">

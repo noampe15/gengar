@@ -5,6 +5,7 @@ const PulseContext = createContext(null)
 
 const INITIAL = {
   view: "overview",
+  detectionsMode: "rules",
   policyOpen: false,
   policy: { schema: "manual", lookup: "backtest", soar: "dual" },
   nodeId: "",
@@ -21,8 +22,11 @@ function reducer(state, action) {
         ...state,
         view: action.view,
         policyOpen: false,
+        detectionsMode: action.view === "detections" ? (action.mode || "rules") : state.detectionsMode,
         remediationTier: action.tier || (action.view === "remediation" ? "all" : state.remediationTier),
       }
+    case "detections-mode":
+      return { ...state, detectionsMode: action.mode }
     case "remediation-tier":
       return { ...state, remediationTier: action.tier }
     case "policy-toggle":

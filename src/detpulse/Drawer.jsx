@@ -63,7 +63,7 @@ export default function Drawer() {
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <button type="button" aria-label="Close review drawer" className="absolute inset-0 bg-slate-900/30" onClick={() => pulse.dispatch({ type: "close" })} />
-      <aside role="dialog" aria-modal="true" aria-labelledby="review-title" className="drawer-in relative flex h-full w-full max-w-3xl flex-col border-l border-slate-200 bg-[#F8FAFC] shadow-xl">
+      <aside role="dialog" aria-modal="true" aria-labelledby="review-title" className="drawer-in relative flex h-full w-full max-w-3xl flex-col border-l border-slate-200/80 bg-[#F4F7FB] shadow-xl">
         <header className="border-b border-slate-200 bg-white px-5 py-4">
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -77,7 +77,7 @@ export default function Drawer() {
               </div>
               <p className="mt-2 text-[12px] text-slate-600">{rule.lineage.join(" ➔ ")}</p>
             </div>
-            <button type="button" onClick={() => pulse.dispatch({ type: "close" })} className="rounded-md border border-slate-200 px-2 py-1 text-[12px] font-semibold text-slate-600">
+            <button type="button" onClick={() => pulse.dispatch({ type: "close" })} className="rounded-xl border border-slate-200/80 px-2.5 py-1.5 text-xs font-semibold text-slate-500 transition hover:bg-slate-50 hover:text-slate-800">
               Close
             </button>
           </div>
@@ -89,7 +89,7 @@ export default function Drawer() {
               <CodeBlock>{rule.broken}</CodeBlock>
             </div>
             <div className="space-y-3">
-              <article className="rounded-xl border border-emerald-200 bg-white p-3">
+              <article className="rounded-2xl border border-emerald-200/70 bg-white p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-[12px] font-semibold text-slate-900">Hunk A · Schema normalization</p>
                   <StatusPill tone="healthy">AST Contract Verified — Safe to Merge</StatusPill>
@@ -118,7 +118,7 @@ export default function Drawer() {
                   <select
                     value={drawer.justification}
                     onChange={(event) => pulse.dispatch({ type: "justify", value: event.target.value })}
-                    className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-[12.5px] font-normal text-slate-800"
+                    className="mt-1 h-9 w-full rounded-xl border border-slate-200/80 bg-white px-2.5 text-[12.5px] font-normal text-slate-800"
                   >
                     <option value="">Select approval justification...</option>
                     {JUSTIFICATIONS.map((option) => (
@@ -133,14 +133,14 @@ export default function Drawer() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <button type="button" onClick={copyQuery} className="inline-flex h-8 items-center rounded-lg border border-slate-200 bg-white px-3 text-[12px] font-semibold text-slate-800">
+            <button type="button" onClick={copyQuery} className="inline-flex h-8 items-center rounded-xl border border-slate-200/80 bg-white px-3 text-xs font-semibold text-slate-800 transition hover:border-slate-300">
               {drawer.copied ? "Copied ✓" : "Copy Patched Query"}
             </button>
             <button
               type="button"
               aria-expanded={drawer.coachOpen}
               onClick={() => pulse.dispatch({ type: "coach-toggle" })}
-              className={`inline-flex h-8 items-center rounded-lg border px-3 text-[12px] font-semibold ${drawer.coachOpen ? "border-amber-300 bg-amber-50 text-amber-800" : "border-slate-200 bg-white text-slate-800"}`}
+              className={`inline-flex h-8 items-center rounded-xl border px-3 text-xs font-semibold transition ${drawer.coachOpen ? "border-amber-200 bg-amber-50 text-amber-800" : "border-slate-200/80 bg-white text-slate-800 hover:border-slate-300"}`}
             >
               Reject / Coach Agent
             </button>
@@ -157,7 +157,7 @@ export default function Drawer() {
                     type="button"
                     disabled={drawer.resynth}
                     onClick={() => pulse.dispatch({ type: "coach-pick", code: rule.coach[preset.id] })}
-                    className="block w-full rounded-lg border border-slate-200 px-3 py-2 text-left text-[12.5px] text-slate-700 hover:border-indigo-300 hover:bg-indigo-50/50 disabled:opacity-60"
+                    className="block w-full rounded-xl border border-slate-200/80 px-3 py-2 text-left text-[12.5px] text-slate-700 transition hover:border-indigo-200 hover:bg-slate-50 disabled:opacity-60"
                   >
                     {preset.label}
                   </button>
@@ -181,7 +181,7 @@ export default function Drawer() {
                 type="button"
                 disabled={drawer.replay === "running" || rule.patched}
                 onClick={() => pulse.dispatch({ type: "replay-start" })}
-                className="inline-flex h-8 items-center rounded-lg bg-indigo-600 px-3 text-[12px] font-semibold text-white hover:bg-indigo-500 disabled:opacity-60"
+                className="inline-flex h-8 items-center rounded-xl bg-indigo-600 px-3 text-xs font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-60"
               >
                 {drawer.replay === "running" ? "Replaying…" : "▶ Run 30-Day Historical Replay (Snowflake Lake)"}
               </button>
@@ -203,7 +203,7 @@ export default function Drawer() {
             ) : null}
           </div>
           {rule.audit ? (
-            <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[12.5px] text-emerald-800">
+            <p className="rounded-2xl border border-emerald-200/70 bg-emerald-50/80 px-3 py-2 text-[12.5px] text-emerald-800">
               {rule.audit}. Detection Resilience Score is now <span className="font-mono font-semibold">{pulse.drs.toFixed(1)}</span>.
             </p>
           ) : null}
@@ -216,8 +216,8 @@ export default function Drawer() {
                 type="button"
                 disabled={locked || rule.patched}
                 onClick={() => pulse.dispatch({ type: "merge" })}
-                className={`inline-flex h-9 items-center rounded-lg px-3 text-[12px] font-semibold text-white ${
-                  locked || rule.patched ? "cursor-not-allowed bg-slate-900 opacity-50" : "bg-slate-900 hover:bg-slate-800"
+                className={`inline-flex h-9 items-center rounded-xl px-3 text-xs font-semibold text-white transition ${
+                  locked || rule.patched ? "cursor-not-allowed bg-slate-900 opacity-50" : "bg-slate-900 hover:bg-indigo-600"
                 }`}
               >
                 {rule.patched ? rule.prLabel : "Approve & Open Detection-as-Code PR (GitHub)"}
@@ -239,7 +239,7 @@ function AuthoringDrawer() {
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <button type="button" aria-label="Close review drawer" className="absolute inset-0 bg-slate-900/30" onClick={() => pulse.dispatch({ type: "close" })} />
-      <aside role="dialog" aria-modal="true" aria-labelledby="review-title" className="drawer-in relative flex h-full w-full max-w-3xl flex-col border-l border-slate-200 bg-[#F8FAFC] shadow-xl">
+      <aside role="dialog" aria-modal="true" aria-labelledby="review-title" className="drawer-in relative flex h-full w-full max-w-3xl flex-col border-l border-slate-200/80 bg-[#F4F7FB] shadow-xl">
         <header className="border-b border-slate-200 bg-white px-5 py-4">
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -247,7 +247,7 @@ function AuthoringDrawer() {
               <h2 id="review-title" className="mt-1 text-[16px] font-semibold text-slate-900">{gap.threat}</h2>
               <span className="mt-2 inline-flex rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[11px] text-slate-700">{gap.technique}</span>
             </div>
-            <button type="button" onClick={() => pulse.dispatch({ type: "close" })} className="rounded-md border border-slate-200 px-2 py-1 text-[12px] font-semibold text-slate-600">
+            <button type="button" onClick={() => pulse.dispatch({ type: "close" })} className="rounded-xl border border-slate-200/80 px-2.5 py-1.5 text-xs font-semibold text-slate-500 transition hover:bg-slate-50 hover:text-slate-800">
               Close
             </button>
           </div>
@@ -255,7 +255,7 @@ function AuthoringDrawer() {
         <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
           <section>
             <p className="text-[13px] font-semibold text-slate-900">Step 1 — Live Enterprise Telemetry Profiling Summary</p>
-            <div className="mt-2 space-y-1 rounded-lg border border-slate-800 bg-slate-950 p-3 font-mono text-[11px] leading-relaxed text-slate-100">
+            <div className="mt-2 space-y-1 rounded-xl border border-slate-800/80 bg-[#0B132B] p-3 font-mono text-[11px] leading-relaxed text-slate-100">
               <p><span className="text-slate-400">Ingested Table: </span>{gap.table}</p>
               <p><span className="text-slate-400">Field Cardinality Check: </span>{gap.cardinality}</p>
               <p><span className="text-slate-400">Environment Baseline Discovery: </span>{gap.baseline}</p>
@@ -290,7 +290,7 @@ function AuthoringDrawer() {
                 <select
                   value={drawer.justification}
                   onChange={(event) => pulse.dispatch({ type: "justify", value: event.target.value })}
-                  className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-[12.5px] font-normal text-slate-800"
+                  className="mt-1 h-9 w-full rounded-xl border border-slate-200/80 bg-white px-2.5 text-[12.5px] font-normal text-slate-800"
                 >
                   <option value="">Select approval justification...</option>
                   {JUSTIFICATIONS.map((option) => (
@@ -326,8 +326,8 @@ function AuthoringDrawer() {
               type="button"
               disabled={!ready || drawer.deployed}
               onClick={() => pulse.dispatch({ type: "deploy-author" })}
-              className={`inline-flex h-9 items-center rounded-lg px-3 text-[12px] font-semibold text-white ${
-                !ready || drawer.deployed ? "cursor-not-allowed bg-slate-900 opacity-50" : "bg-slate-900 hover:bg-slate-800"
+              className={`inline-flex h-9 items-center rounded-xl px-3 text-xs font-semibold text-white transition ${
+                !ready || drawer.deployed ? "cursor-not-allowed bg-slate-900 opacity-50" : "bg-slate-900 hover:bg-indigo-600"
               }`}
             >
               {drawer.deployed ? "Pull request opened" : "Deploy New Rule via Detection-as-Code PR"}
@@ -348,7 +348,7 @@ function authorLockReason(drawer) {
 
 function Metric({ label, value, note, tone }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+    <div className="rounded-2xl border border-slate-200/60 bg-white px-3 py-2.5">
       <p className="text-[11px] text-slate-500">{label}</p>
       <p className={`mt-1 font-mono text-[18px] font-semibold ${tone}`}>{value}</p>
       <p className="mt-1 text-[11px] leading-snug text-slate-500">{note}</p>

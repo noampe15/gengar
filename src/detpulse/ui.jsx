@@ -2,7 +2,7 @@ import { useId } from "react"
 
 export function Card({ className = "", children }) {
   return (
-    <section className={`overflow-hidden rounded-3xl border border-slate-200/50 bg-white shadow-sm ${className}`}>
+    <section className={`overflow-hidden rounded-3xl border border-slate-200/50 bg-[#F4F7FB] shadow-sm ${className}`}>
       {children}
     </section>
   )
@@ -122,7 +122,7 @@ export function Sparkline({ values, tone = "slate", width = 120, height = 44, fl
 
 export function CodeBlock({ children, className = "" }) {
   return (
-    <pre className={`overflow-x-auto whitespace-pre-wrap rounded-lg border border-slate-800 bg-slate-950 p-3 font-mono text-[11px] leading-relaxed text-slate-100 ${className}`}>
+    <pre className={`overflow-x-auto whitespace-pre-wrap rounded-xl border border-slate-800/80 bg-[#0B132B] p-3 font-mono text-[11px] leading-relaxed text-slate-100 ${className}`}>
       {children}
     </pre>
   )

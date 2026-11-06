@@ -36,6 +36,23 @@ const ENGINES = [
   { id: "Snowflake", label: "Snowflake OCSF (24)", chip: "Snowflake" },
 ]
 
+const GAPS = [
+  { id: "t1556", technique: "T1556.006", title: "Okta MFA Push Bombing", tactic: "Credential Access", domain: "identity", schema: "OktaV2_CL · Snowflake / Sentinel Lake", ready: true },
+  { id: "t1528", technique: "T1528", title: "AWS Bedrock / IAM Session Replay", tactic: "Credential Access", domain: "cloud", schema: "CloudTrail_CL · Snowflake OCSF", ready: true },
+  { id: "t1486", technique: "T1486", title: "Volume Shadow Copy / Ransomware Prep", tactic: "Impact", domain: "endpoint", schema: "DeviceProcessEvents · Defender / Sentinel", ready: true },
+  { id: "t1190", technique: "T1190", title: "Exploit Public-Facing Application", tactic: "Initial Access", domain: "network", schema: "zeek.http · Corelight → Splunk", ready: false },
+  { id: "t1021.001", technique: "T1021.001", title: "Remote Desktop Lateral Movement", tactic: "Lateral Movement", domain: "identity", schema: "SecurityEvent · Sentinel", ready: false },
+  { id: "t1059.003", technique: "T1059.003", title: "Windows Command Shell", tactic: "Execution", domain: "endpoint", schema: "DeviceProcessEvents · MDE", ready: false },
+  { id: "t1547", technique: "T1547", title: "Boot or Logon Autostart Execution", tactic: "Persistence", domain: "endpoint", schema: "DeviceRegistryEvents · MDE", ready: false },
+  { id: "t1068", technique: "T1068", title: "Exploitation for Privilege Escalation", tactic: "Privilege Escalation", domain: "endpoint", schema: "DeviceEvents · Defender", ready: false },
+  { id: "t1110", technique: "T1110", title: "Brute Force against Privileged IdP", tactic: "Credential Access", domain: "identity", schema: "SigninLogs · Entra ID", ready: false },
+  { id: "t1572", technique: "T1572", title: "Protocol Tunneling over TLS", tactic: "Command and Control", domain: "network", schema: "zeek.ssl · Corelight", ready: false },
+  { id: "t1048", technique: "T1048", title: "Exfiltration Over Alternative Protocol", tactic: "Exfiltration", domain: "network", schema: "zeek.conn · Splunk", ready: false },
+  { id: "t1530", technique: "T1530", title: "Data from Cloud Storage Object", tactic: "Collection", domain: "cloud", schema: "AWS CloudTrail S3 · Snowflake", ready: false },
+  { id: "t1213.002", technique: "T1213.002", title: "SharePoint Data Repository Dump", tactic: "Collection", domain: "saas", schema: "OfficeActivity · Sentinel", ready: false },
+  { id: "t1566.002", technique: "T1566.002", title: "Spearphishing Link in SaaS Mail", tactic: "Initial Access", domain: "saas", schema: "Google Workspace · Splunk", ready: false },
+]
+
 function domainOf(rule) {
   const hay = `${(rule.lineage || []).join(" ")} ${rule.title}`.toLowerCase()
   if (/zeek|corelight|palo|dns/.test(hay)) return "network"
@@ -45,7 +62,7 @@ function domainOf(rule) {
   return "endpoint"
 }
 
-function FilterChip({ open, onToggle, onClose, label, children }) {
+function FilterChip({ open, onToggle, onClose, label, active, children }) {
   const ref = useRef(null)
   useEffect(() => {
     if (!open) return
@@ -69,10 +86,12 @@ function FilterChip({ open, onToggle, onClose, label, children }) {
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={onToggle}
-        className="flex items-center gap-1.5 rounded-xl border border-slate-200/80 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-300"
+        className={active || open
+          ? "flex items-center gap-1 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-slate-900 shadow-sm transition"
+          : "flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-500 transition hover:text-slate-900"}
       >
         {label}
-        <ChevronDown className="size-3.5 text-slate-400" />
+        <ChevronDown className={`size-3.5 ${active || open ? "text-slate-500" : "text-slate-400"}`} />
       </button>
       {open ? (
         <div role="listbox" className="absolute top-[calc(100%+6px)] left-0 z-20 w-56 rounded-xl border border-slate-200/80 bg-white py-1 shadow-lg">
@@ -92,6 +111,7 @@ export default function DetectionsView() {
   const [siem, setSiem] = useState("")
   const [issuesOnly, setIssuesOnly] = useState(false)
   const [menu, setMenu] = useState(null)
+  const gapsMode = pulse.detectionsMode === "gaps"
 
   useEffect(() => {
     function onKey(event) {
@@ -124,11 +144,51 @@ export default function DetectionsView() {
     })
   }, [query, domain, status, siem, issuesOnly, pulse.patched])
 
+  const gapRows = useMemo(() => {
+    const needle = query.trim().toLowerCase()
+    return GAPS.filter((gap) => {
+      if (domain !== "all" && gap.domain !== domain) return false
+      if (!needle) return true
+      const hay = `${gap.title} ${gap.technique} ${gap.tactic} ${gap.schema}`.toLowerCase()
+      return hay.includes(needle)
+    })
+  }, [query, domain])
+
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold text-[#0B132B]">Detections</h1>
-        <p className="mt-1 text-sm text-slate-500">Production rules against the contract they were written for.</p>
+      <div className="mb-5 flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-[#0B132B]">Detections</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            {gapsMode
+              ? "Empirical MITRE ATT&CK coverage gaps cross-referenced against live Snowflake & SIEM schemas."
+              : "Production rules verified against the telemetry contracts they were written for."}
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-0.5 rounded-xl border border-slate-200/60 bg-slate-100/80 p-1">
+          {[
+            ["rules", "Active Rules (198)"],
+            ["gaps", "Uncovered Gaps (89)"],
+          ].map(([id, label]) => {
+            const active = (id === "gaps") === gapsMode
+            return (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={active}
+                onClick={() => pulse.dispatch({ type: "detections-mode", mode: id })}
+                className={active
+                  ? "flex items-center rounded-lg bg-white px-3.5 py-1.5 text-xs font-semibold text-[#0B132B] shadow-sm transition"
+                  : "flex items-center rounded-lg px-3.5 py-1.5 text-xs font-medium text-slate-500 transition hover:text-slate-900"}
+              >
+                {label}
+                {id === "gaps" ? (
+                  <span className="ml-1.5 rounded-full bg-indigo-600 px-2 py-0.5 text-[10px] font-bold text-white">+3 Ready (AI)</span>
+                ) : null}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       <div className="relative mb-3 w-full">
@@ -164,9 +224,12 @@ export default function DetectionsView() {
           })}
         </div>
 
-        <div className="flex items-center gap-2">
+        {gapsMode ? null : (
+        <>
+        <div className="flex items-center gap-0.5 rounded-xl border border-slate-200/60 bg-slate-100/80 p-1">
           <FilterChip
             open={menu === "status"}
+            active={status !== "all"}
             onToggle={() => setMenu((current) => (current === "status" ? null : "status"))}
             onClose={() => setMenu(null)}
             label={`Status: ${statusMeta.chip}`}
@@ -192,6 +255,7 @@ export default function DetectionsView() {
 
           <FilterChip
             open={menu === "engine"}
+            active={Boolean(siem)}
             onToggle={() => setMenu((current) => (current === "engine" ? null : "engine"))}
             onClose={() => setMenu(null)}
             label={`Engine: ${engineMeta.chip}`}
@@ -224,13 +288,62 @@ export default function DetectionsView() {
               return next
             })
           }}
-          className={`ml-auto flex cursor-pointer items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${issuesOnly ? "border-red-300 bg-red-100 text-red-800" : "border-red-200/60 bg-red-50 text-red-700 hover:bg-red-100"}`}
+          className={`ml-auto inline-flex items-center gap-1.5 rounded-xl border border-slate-200/60 bg-slate-100/80 p-1`}
         >
+          <span className={issuesOnly
+            ? "inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-red-700 shadow-sm"
+            : "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-500 transition hover:text-slate-900"}
+          >
           <span className="size-1.5 rounded-full bg-red-500" />
           6 Issues Active
+          </span>
         </button>
+        </>
+        )}
       </div>
 
+      {gapsMode ? (
+        <div className="overflow-hidden rounded-3xl border border-slate-200/50 bg-[#F4F7FB] p-3">
+          <div className="overflow-x-auto rounded-2xl border border-slate-200/60 bg-white">
+            <table className="w-full min-w-[880px] text-left">
+              <thead>
+                <tr className="border-b border-slate-100 text-[11px] font-medium tracking-wide text-slate-400 uppercase">
+                  <th className="px-4 py-2 font-medium">Uncovered technique</th>
+                  <th className="px-4 py-2 font-medium">Tactic</th>
+                  <th className="px-4 py-2 font-medium">Live schema</th>
+                  <th className="px-4 py-2 font-medium">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {gapRows.map((gap) => (
+                  <tr
+                    key={gap.id}
+                    onClick={() => {
+                      if (gap.ready && (gap.id === "t1556" || gap.id === "t1528")) pulse.dispatch({ type: "author", id: gap.id })
+                    }}
+                    className={gap.ready && (gap.id === "t1556" || gap.id === "t1528") ? "cursor-pointer hover:bg-slate-50" : ""}
+                  >
+                    <td className="px-4 py-3">
+                      <p className="text-[13px] font-semibold text-slate-900">{gap.title}</p>
+                      <p className="font-mono text-[11px] text-slate-400">{DOMAIN_LABEL[gap.domain]} • {gap.technique}</p>
+                    </td>
+                    <td className="px-4 py-3 text-[12.5px] text-slate-700">{gap.tactic}</td>
+                    <td className="px-4 py-3 text-[12.5px] text-slate-600">{gap.schema}</td>
+                    <td className="px-4 py-3">
+                      {gap.ready ? (
+                        <span className="inline-flex items-center rounded-full bg-indigo-600 px-2.5 py-0.5 text-[11px] font-semibold text-white">Ready (AI)</span>
+                      ) : (
+                        <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-medium text-slate-600">Uncovered</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {gapRows.length === 0 ? <p className="px-4 py-8 text-sm text-slate-500">No coverage gaps match this filter.</p> : null}
+          </div>
+        </div>
+      ) : (
       <div className="overflow-hidden rounded-3xl border border-slate-200/50 bg-[#F4F7FB] p-3">
         <div className="overflow-x-auto rounded-2xl border border-slate-200/60 bg-white">
           <table className="w-full min-w-[980px] text-left">
@@ -276,6 +389,7 @@ export default function DetectionsView() {
           {rows.length === 0 ? <p className="px-4 py-8 text-sm text-slate-500">No rules match this filter.</p> : null}
         </div>
       </div>
+      )}
     </div>
   )
 }

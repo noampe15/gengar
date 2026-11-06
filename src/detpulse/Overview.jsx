@@ -1,13 +1,14 @@
 import { useId } from "react"
+import { usePulse } from "./PulseContext"
 import { areaPath, seriesPoints, smoothPath } from "./ui"
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 const NOISE_VOLUMES = [
-  { raw: 1680, suppressed: 1180 },
-  { raw: 2140, suppressed: 1620 },
-  { raw: 1920, suppressed: 1420 },
-  { raw: 2280, suppressed: 1680 },
-  { raw: 1580, suppressed: 1200 },
+  { raw: 1460, filtered: 260 },
+  { raw: 2280, filtered: 740 },
+  { raw: 1680, filtered: 410 },
+  { raw: 2060, filtered: 620 },
+  { raw: 1320, filtered: 190 },
 ]
 const DRIFT_EVENTS = ["WARP Cutover", "AWS IAM", "Falcon v7.14"]
 
@@ -35,6 +36,7 @@ const RAIL = [
 ]
 
 export default function Overview() {
+  const pulse = usePulse()
   return (
     <div className="@container flex h-full min-h-0 flex-col overflow-y-auto bg-white px-8 pt-6 pb-5">
       <div className="shrink-0">
@@ -82,6 +84,7 @@ export default function Overview() {
           bar="69%"
           barClass="bg-indigo-600"
           footer="198 active rules • 89 uncovered gaps"
+          onOpen={() => pulse.dispatch({ type: "view", view: "detections", mode: "gaps" })}
         />
         <RibbonCard
           label="Signal-to-Noise"
@@ -230,13 +233,13 @@ function NoiseHistogram() {
   return (
     <div className="relative my-2 flex min-h-[130px] flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200/70 bg-gradient-to-b from-white via-white to-slate-50/90 px-3.5 pt-3 pb-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-100 bg-amber-50/80 px-2 py-0.5 text-[10px] font-medium text-amber-800">
-          <span className="size-1.5 rounded-full bg-gradient-to-b from-amber-300 to-amber-500 shadow-[0_0_0_3px_rgba(245,158,11,0.18)]" />
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-600">
+          <span className="size-1.5 rounded-sm bg-slate-300" />
           Raw SIEM
         </span>
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50/80 px-2 py-0.5 text-[10px] font-medium text-emerald-800">
-          <span className="size-1.5 rounded-full bg-gradient-to-b from-emerald-300 to-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.18)]" />
-          AI suppressed
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-100 bg-indigo-50/80 px-2 py-0.5 text-[10px] font-medium text-indigo-700">
+          <span className="size-1.5 rounded-sm bg-indigo-600" />
+          AI Filtered Signal
         </span>
       </div>
       <div className="mt-3 flex min-h-0 flex-1 flex-col">
@@ -248,29 +251,23 @@ function NoiseHistogram() {
             </div>
             <div className="relative z-[1] flex h-full items-end justify-between gap-1.5">
               {series.map((entry, index) => {
-                const share = Math.round((entry.suppressed / entry.raw) * 100)
+                const cut = Math.round((1 - entry.filtered / entry.raw) * 100)
                 return (
-                  <div key={entry.day} className="group relative flex h-full min-w-0 flex-1 items-end justify-center gap-[3px] rounded-2xl px-1 pt-1 transition hover:bg-slate-900/[0.03]">
+                  <div key={entry.day} className="group relative flex h-full min-w-0 flex-1 items-end justify-center gap-1 rounded-2xl px-1 pt-1 transition hover:bg-slate-900/[0.03]">
                     <span className={`pointer-events-none absolute bottom-[calc(100%-6px)] z-10 hidden rounded-xl bg-[#0B132B]/95 px-2.5 py-1.5 text-[10px] leading-snug whitespace-nowrap text-white shadow-xl ring-1 ring-white/10 group-hover:block ${index === 0 ? "left-0" : index === series.length - 1 ? "right-0" : "left-1/2 -translate-x-1/2"}`}>
                       <span className="block font-semibold">{entry.day}</span>
-                      <span className="mt-0.5 block text-amber-200">Raw {entry.raw.toLocaleString()}</span>
-                      <span className="block text-emerald-200">Suppressed {entry.suppressed.toLocaleString()}</span>
-                      <span className="block text-white/55">{share}% of raw volume</span>
+                      <span className="mt-0.5 block text-slate-300">Raw {entry.raw.toLocaleString()}</span>
+                      <span className="block text-indigo-200">Filtered {entry.filtered.toLocaleString()}</span>
+                      <span className="block text-white/55">−{cut}% noise</span>
                     </span>
                     <div
-                      className="relative w-[7px] overflow-hidden rounded-full sm:w-2"
+                      className="w-3.5 rounded-t-md rounded-b-none bg-slate-200 transition hover:bg-slate-300"
                       style={{ height: `${(entry.raw / scale) * 100}%` }}
-                    >
-                      <span className="absolute inset-0 bg-gradient-to-t from-amber-600 via-amber-400 to-amber-200" />
-                      <span className="absolute inset-x-[2px] top-[3px] h-2 rounded-full bg-white/50" />
-                    </div>
+                    />
                     <div
-                      className="relative w-[7px] overflow-hidden rounded-full sm:w-2"
-                      style={{ height: `${(entry.suppressed / scale) * 100}%` }}
-                    >
-                      <span className="absolute inset-0 bg-gradient-to-t from-emerald-600 via-emerald-400 to-emerald-200" />
-                      <span className="absolute inset-x-[2px] top-[3px] h-2 rounded-full bg-white/50" />
-                    </div>
+                      className="w-3.5 rounded-t-md rounded-b-none bg-indigo-600"
+                      style={{ height: `${(entry.filtered / scale) * 100}%` }}
+                    />
                   </div>
                 )
               })}
@@ -313,9 +310,20 @@ function ReplayRing() {
   )
 }
 
-function RibbonCard({ label, pill, pillClass, value, note, noteClass, bar, barClass, footer }) {
+function RibbonCard({ label, pill, pillClass, value, note, noteClass, bar, barClass, footer, onOpen }) {
   return (
-    <article className="flex h-full min-h-[176px] min-w-0 flex-col justify-between rounded-2xl border border-slate-200/50 bg-[#F4F7FB] p-5">
+    <article
+      role={onOpen ? "button" : undefined}
+      tabIndex={onOpen ? 0 : undefined}
+      onClick={onOpen}
+      onKeyDown={onOpen ? (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault()
+          onOpen()
+        }
+      } : undefined}
+      className={`flex h-full min-h-[176px] min-w-0 flex-col justify-between rounded-2xl border border-slate-200/50 bg-[#F4F7FB] p-5 ${onOpen ? "cursor-pointer transition hover:border-indigo-200 hover:shadow-sm" : ""}`}
+    >
       <div className="flex items-center justify-between gap-2 whitespace-nowrap">
         <h2 className="text-xs font-bold whitespace-nowrap text-slate-700">{label}</h2>
         <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] ${pillClass}`}>{pill}</span>

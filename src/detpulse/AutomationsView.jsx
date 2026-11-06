@@ -39,7 +39,7 @@ export default function AutomationsView() {
                 ) : null}
               </div>
               {broken ? (
-                <div className="mt-3">
+                <div className="mt-3 rounded-2xl border border-slate-200/60 bg-white p-4">
                   <p className="text-[13px] text-red-700">{playbook.error}</p>
                   <div className="mt-3 grid gap-3 md:grid-cols-2">
                     <div>
