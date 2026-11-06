@@ -1,12 +1,27 @@
 import { useEffect, useRef, useState } from "react"
-import { GitBranch, LayoutDashboard, Menu, ShieldAlert, Waypoints, Workflow } from "lucide-react"
+import { Radar, User, Waypoints, Workflow, Wrench } from "lucide-react"
 import { usePulse } from "./PulseContext"
 
+function MilitaryBase({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 21h18" />
+      <path d="M6 21V10h6v11" />
+      <path d="M12 21V8h7v13" />
+      <path d="M8 14h2" />
+      <path d="M15 12h2" />
+      <path d="M15 16h2" />
+      <path d="M8 8V4" />
+      <path d="M8 4h5l-1.2 1.8L13 7.5H8" />
+    </svg>
+  )
+}
+
 const NAV_ICONS = {
-  overview: LayoutDashboard,
+  overview: MilitaryBase,
+  remediation: Wrench,
   supply: Waypoints,
-  detections: ShieldAlert,
-  parsers: GitBranch,
+  detections: Radar,
   automations: Workflow,
 }
 
@@ -24,93 +39,101 @@ const SOAR = [
   ["dual", "Dual Approval"],
 ]
 
-function countLabel(count, singular, plural) {
-  if (!count) return ""
-  return `${count} ${count === 1 ? singular : plural}`
-}
-
 function useNavItems() {
   const pulse = usePulse()
   return [
-    { id: "overview", label: "Overview", hint: "Command Center", badge: "", count: pulse.pending },
-    { id: "supply", label: "Live Data-to-Detection Supply Chain", badge: countLabel(pulse.degradedHops, "Degraded Hop", "Degraded Hops"), count: pulse.degradedHops },
-    { id: "detections", label: "Detections & Rule Health", badge: countLabel(pulse.degradedLeft.length, "Degraded", "Degraded"), count: pulse.degradedLeft.length },
-    { id: "parsers", label: "Parsers & Schema Lineage", badge: countLabel(pulse.parserDrift, "Drift Event", "Drift Events"), count: pulse.parserDrift },
-    { id: "automations", label: "Automations & SOAR", badge: countLabel(pulse.brokenWebhooks, "Broken Webhook", "Broken Webhooks"), count: pulse.brokenWebhooks },
+    { id: "overview", label: "Command Center", hint: "", count: 0 },
+    { id: "detections", label: "Detections", hint: "", count: pulse.degradedLeft.length },
+    { id: "automations", label: "Automations", hint: "", count: pulse.brokenWebhooks },
+    { id: "remediation", label: "Remediation", hint: "", count: pulse.pending + 4 },
+    { id: "supply", label: "Topology Analysis", hint: "", count: 4 },
   ]
 }
 
 export function SideNav() {
   const pulse = usePulse()
   const tabs = useNavItems()
-  const [collapsed, setCollapsed] = useState(false)
+  const menuRef = useRef(null)
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  useEffect(() => {
+    if (!menuOpen) return undefined
+    function onPointer(event) {
+      if (!menuRef.current?.contains(event.target)) setMenuOpen(false)
+    }
+    function onKey(event) {
+      if (event.key === "Escape") setMenuOpen(false)
+    }
+    document.addEventListener("pointerdown", onPointer)
+    document.addEventListener("keydown", onKey)
+    return () => {
+      document.removeEventListener("pointerdown", onPointer)
+      document.removeEventListener("keydown", onKey)
+    }
+  }, [menuOpen])
+
   return (
-    <aside className={`flex h-full shrink-0 flex-col border-r border-slate-200 bg-white transition-[width] duration-200 ${collapsed ? "w-[84px]" : "w-[248px]"}`}>
-      <div className={`flex border-b border-slate-100 ${collapsed ? "flex-col items-center gap-1.5 px-1.5 py-3" : "h-14 items-center gap-2 px-3"}`}>
-        <button
-          type="button"
-          aria-expanded={!collapsed}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          onClick={() => setCollapsed((current) => !current)}
-          className="grid size-8 shrink-0 place-items-center rounded-lg text-slate-600 hover:bg-slate-50"
-        >
-          <Menu className="size-4" />
-        </button>
-        <div className={`flex min-w-0 items-center ${collapsed ? "flex-col gap-1" : "gap-2"}`}>
-          <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-indigo-600 text-white">
-            <svg viewBox="0 0 24 24" className="size-3.5" aria-hidden="true">
-              <path d="M2 12h4l2.2-6 3.6 12 2.2-6H22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+    <aside className="flex h-full w-16 shrink-0 flex-col items-center border-r border-slate-700 bg-slate-800 py-5 text-slate-300">
+      <div className="flex flex-col items-center gap-8">
+        <div className="flex flex-col items-center gap-1.5 text-slate-200">
+          <span className="grid size-8 place-items-center">
+            <svg viewBox="0 0 24 24" className="size-7" aria-hidden="true">
+              <path d="M2 12h4l2.2-6 3.6 12 2.2-6H22" fill="none" stroke="currentColor" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
             </svg>
           </span>
-          <div className={`min-w-0 leading-tight ${collapsed ? "text-center" : ""}`}>
-            <p className="text-[13px] font-semibold whitespace-nowrap text-slate-900">DetPulse</p>
-            {collapsed ? null : <p className="truncate text-[11px] text-slate-400">Detection Resilience</p>}
-          </div>
+          <p className="text-[11px] font-bold leading-none tracking-tight">DetPulse</p>
         </div>
-      </div>
-      <nav aria-label="Primary views" className={`flex flex-1 flex-col gap-1 overflow-y-auto ${collapsed ? "items-center p-2" : "p-3"}`}>
+        <nav aria-label="Primary views" className="flex flex-col items-center gap-2">
         {tabs.map((tab) => {
           const active = pulse.view === tab.id
           const Icon = NAV_ICONS[tab.id]
-          const tip = tab.badge ? `${tab.label}. ${tab.badge}` : tab.hint ? `${tab.label}. ${tab.hint}` : tab.label
           return (
             <button
               key={tab.id}
               type="button"
               aria-current={active ? "page" : undefined}
-              title={collapsed ? tip : undefined}
-              onClick={() => pulse.dispatch({ type: "view", view: tab.id })}
-              className={`relative overflow-visible rounded-lg border text-left ${
-                collapsed ? "grid size-10 place-items-center" : "flex items-start gap-2.5 px-3 py-2.5"
-              } ${
-                active
-                  ? "border-indigo-200 bg-indigo-50/70 text-indigo-700"
-                  : "border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-              }`}
+              title={tab.count ? `${tab.label}. ${tab.count} open` : tab.label}
+              onClick={() => pulse.dispatch({ type: "view", view: tab.id, tier: tab.id === "remediation" ? "all" : undefined })}
+              className={`relative grid size-10 place-items-center rounded-2xl transition ${active ? "bg-white text-slate-900 shadow-sm" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}
             >
-              <span className={`shrink-0 ${collapsed ? "" : "mt-0.5"}`}>
-                <Icon className="size-4" />
-              </span>
+              <Icon className="size-4" />
               {tab.count > 0 ? (
-                <span className={`pointer-events-none absolute flex items-center justify-center rounded-full bg-rose-600 font-semibold leading-none text-white ring-2 ring-white ${collapsed ? "top-0 right-0 h-3 min-w-3 text-[9px]" : "top-2 right-2 h-4 min-w-4 px-1 text-[10px]"}`}>
+                <span className="pointer-events-none absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-semibold leading-none text-white ring-2 ring-slate-800">
                   {tab.count}
                 </span>
               ) : null}
-              {collapsed ? null : (
-                <span className={`min-w-0 ${tab.count > 0 ? "pr-5" : ""}`}>
-                  <span className="block text-[13px] font-semibold text-slate-900">{tab.label}</span>
-                  {tab.hint ? <span className="mt-0.5 block text-[11px] font-normal text-slate-400">{tab.hint}</span> : null}
-                  {tab.badge ? (
-                    <span className={`mt-1.5 inline-flex rounded-full border px-1.5 py-0.5 font-mono text-[10px] font-medium ${active ? "border-indigo-200 bg-white text-indigo-700" : "border-slate-200 bg-slate-50 text-slate-500"}`}>
-                      {tab.badge}
-                    </span>
-                  ) : null}
-                </span>
-              )}
             </button>
           )
         })}
-      </nav>
+        </nav>
+      </div>
+      <div className="relative mt-auto" ref={menuRef}>
+        <button
+          type="button"
+          aria-expanded={menuOpen}
+          aria-haspopup="menu"
+          title="Account menu"
+          onClick={() => setMenuOpen((open) => !open)}
+          className="grid size-10 place-items-center rounded-full bg-white text-slate-800 shadow-sm ring-2 ring-slate-600"
+        >
+          <User className="size-4" />
+        </button>
+        {menuOpen ? (
+          <div role="menu" aria-label="Account" className="absolute bottom-0 left-full z-50 ml-3 w-44 rounded-xl border border-slate-200/80 bg-white p-1.5 text-left shadow-[0_8px_24px_rgba(15,23,42,0.12)]">
+            {["Account", "Settings", "Log Out"].map((item) => (
+              <button
+                key={item}
+                type="button"
+                role="menuitem"
+                onClick={() => setMenuOpen(false)}
+                className={`block w-full rounded-lg px-3 py-2 text-left text-xs font-semibold hover:bg-slate-50 ${item === "Log Out" ? "text-slate-500" : "text-slate-800"}`}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
     </aside>
   )
 }
@@ -145,7 +168,7 @@ export default function TopBar() {
               onClick={() => pulse.dispatch({ type: "policy-toggle" })}
               className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-800 hover:border-slate-300"
             >
-              HITL Policy: Strict
+              Governance Policy: Strict
             </button>
             {pulse.policyOpen ? <PolicyPopover /> : null}
           </div>
@@ -158,10 +181,10 @@ export default function TopBar() {
   )
 }
 
-function PolicyPopover() {
+function PolicyPopover({ className = "absolute right-0 z-50 mt-2" }) {
   const { policy, dispatch } = usePulse()
   return (
-    <div role="dialog" aria-label="AI governance tiers" className="absolute right-0 z-50 mt-2 w-[22rem] max-w-[calc(100vw-2rem)] rounded-xl border border-slate-200/80 bg-white p-3 text-left shadow-[0_8px_24px_rgba(15,23,42,0.08)]">
+    <div role="dialog" aria-label="AI governance tiers" className={`${className} z-50 w-[22rem] max-w-[calc(100vw-2rem)] rounded-xl border border-slate-200/80 bg-white p-3 text-left text-slate-900 shadow-[0_8px_24px_rgba(15,23,42,0.08)]`}>
       <p className="text-[12px] font-semibold text-slate-900">AI governance tiers</p>
       <p className="mt-0.5 text-[11px] text-slate-500">Query logic stays on mandatory replay and lead sign-off.</p>
       <div className="mt-3 space-y-3">
@@ -173,7 +196,7 @@ function PolicyPopover() {
         </Tier>
         <Tier label="Query Logic & Exclusions">
           <span className="inline-flex rounded-full border border-amber-200/60 bg-amber-50/80 px-2 py-1 text-[11px] font-medium text-amber-700">
-            Strict HITL: Mandatory 30d Replay + Lead Sign-Off
+            Strict: Mandatory 30d Replay + Lead Sign-Off
           </span>
         </Tier>
         <Tier label="SOAR Webhook Contract Fixes">

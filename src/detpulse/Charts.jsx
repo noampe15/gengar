@@ -421,13 +421,6 @@ const SIGNAL_DAYS = [
   drop: index >= 11,
 }))
 
-const STAGE_CHIP = {
-  telemetry: "01 Collectors",
-  cribl: "02 Cribl",
-  detection: "03 SIEM",
-  response: "04 SOAR",
-}
-
 const RING_R = 58
 const RING_C = 2 * Math.PI * RING_R
 
@@ -475,18 +468,22 @@ function CoverageDonut({ onAuthor }) {
           <p className="mt-1 text-[10px] font-medium text-slate-400">verified</p>
         </div>
       </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-[12px] font-semibold text-slate-900">Live Telemetry Coverage Audit</p>
-        <p className="mt-0.5 font-mono text-[11px] text-slate-400">172 / 230 rules</p>
+      <div className="min-w-0">
+        <p className="font-mono text-[11px] text-slate-400">172 / 230 rules</p>
         <ul className="mt-2.5 space-y-0.5">
           {COVERAGE.map((segment) => {
             const hot = segment.id === "authorable"
-            const className = `flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left transition ${hover === segment.id ? "bg-slate-50" : ""} ${hot ? "cursor-pointer hover:bg-indigo-50/80" : ""}`
+            const className = `flex w-52 items-center justify-between gap-6 rounded-lg px-2 py-1 -mx-2 text-left transition ${hover === segment.id ? "bg-slate-50" : ""} ${hot ? "group cursor-pointer hover:bg-indigo-50/80" : ""}`
             const body = (
               <>
-                <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: segment.color }} />
-                <span className="min-w-0 flex-1 whitespace-nowrap text-[12px] font-medium text-slate-700">{segment.label}</span>
-                <span className="font-mono text-[12px] font-semibold tabular-nums text-slate-900">{segment.count}</span>
+                <span className="flex min-w-0 items-center gap-2">
+                  <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: segment.color }} />
+                  <span className="whitespace-nowrap text-[12px] font-medium text-slate-700">{segment.label}</span>
+                </span>
+                <span className="flex shrink-0 items-center gap-2">
+                  {hot ? <span className="text-[10px] font-semibold text-indigo-600 opacity-0 transition group-hover:opacity-100">Synthesize →</span> : null}
+                  <span className="font-mono text-[12px] font-semibold tabular-nums text-slate-900">{segment.count}</span>
+                </span>
               </>
             )
             return (
@@ -512,51 +509,46 @@ function CoverageDonut({ onAuthor }) {
 
 function SignalHistogram() {
   const [hover, setHover] = useState(-1)
-  const active = hover >= 0 ? SIGNAL_DAYS[hover] : SIGNAL_DAYS[SIGNAL_DAYS.length - 1]
+  const active = hover >= 0 ? SIGNAL_DAYS[hover] : null
   return (
-    <div className="min-w-0">
-      <h3 className="text-[13px] font-semibold tracking-tight text-slate-900">14d Signal Fidelity vs. Alert Storm Volume</h3>
-      <div className="mt-2 flex flex-wrap gap-1.5">
+    <div className="min-w-0 flex-1">
+      <div className="flex flex-wrap items-center gap-1.5">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-500"><span className="size-1.5 rounded-full bg-indigo-500" /> Verified</span>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-500"><span className="size-1.5 rounded-full bg-amber-400" /> FP spike</span>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-500"><span className="size-1.5 rounded-full bg-rose-500" /> Blind spot</span>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-500"><span className="size-1.5 rounded-full bg-amber-400" /> FP under target</span>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-500"><span className="size-1.5 rounded-full" style={{ backgroundColor: "#fbbf24", backgroundImage: "repeating-linear-gradient(-45deg, #ea580c 0 1.5px, transparent 1.5px 3px)" }} /> Suppressed storm</span>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700"><span className="size-1.5 rounded-full bg-emerald-500" /> AI target −74%</span>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-medium text-rose-700">Falcon v7.14 · 0 hits</span>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-500"><span className="size-1.5 rounded-full bg-rose-500" /> Blind spot</span>
       </div>
-      <p className="mt-2.5 flex h-7 items-center">
-        <span className="rounded-full bg-slate-900 px-2.5 py-1 font-mono text-[10px] text-white">
-          {active.date} · {active.verified} verified · {active.fp} suppressed FPs · {active.blind} blind
-        </span>
-      </p>
-      <div className="relative mt-2 h-32">
-        <div className="pointer-events-none absolute right-0 left-[68%] z-10 border-t border-dashed border-emerald-400" style={{ bottom: "34%" }} />
+      <div className="relative mt-3 h-32">
+        {active ? (
+          <p className="pointer-events-none absolute top-0 left-0 z-20">
+            <span className="rounded-full bg-slate-900 px-2.5 py-1 font-mono text-[10px] text-white">
+              {active.date} · {active.verified} verified · {active.fp} suppressed FPs · {active.blind} blind
+            </span>
+          </p>
+        ) : null}
+        <div className="pointer-events-none absolute right-0 left-[68%] z-10 border-t border-dashed border-emerald-500" style={{ bottom: "50%" }} />
         <div className="flex h-full items-end justify-between gap-1.5 border-b border-slate-200">
-          {SIGNAL_DAYS.map((day, index) => {
-            const indigo = day.spike ? 20 : 45
-            const amber = day.spike ? 12 : 8
-            const hatch = day.spike ? 63 : 0
-            const hot = hover === index
-            return (
-              <button
-                key={day.date}
-                type="button"
-                className="group flex h-full min-w-0 flex-1 items-end justify-center"
-                onMouseEnter={() => setHover(index)}
-                onMouseLeave={() => setHover(-1)}
-                onFocus={() => setHover(index)}
-                onBlur={() => setHover(-1)}
-                aria-label={`${day.date}. Verified hits ${day.verified}. Suppressed FPs ${day.fp}. Blind rules ${day.blind}.`}
-              >
-                <span className={`flex h-full w-2.5 flex-col justify-end overflow-hidden rounded-t-full transition ${hot ? "scale-x-125" : ""}`}>
-                  {hatch ? (
-                    <span className="block w-full" style={{ height: `${hatch}%`, backgroundColor: "#d1fae5", backgroundImage: "repeating-linear-gradient(-45deg, rgba(16,185,129,0.85) 0 1.5px, transparent 1.5px 4px)" }} />
-                  ) : null}
-                  <span className="block w-full bg-amber-400" style={{ height: `${amber}%` }} />
-                  <span className="block w-full bg-indigo-500" style={{ height: `${indigo}%` }} />
-                </span>
-              </button>
-            )
-          })}
+          {SIGNAL_DAYS.map((day, index) => (
+            <button
+              key={day.date}
+              type="button"
+              className="flex h-full min-w-0 flex-1 items-end justify-center"
+              onMouseEnter={() => setHover(index)}
+              onMouseLeave={() => setHover(-1)}
+              onFocus={() => setHover(index)}
+              onBlur={() => setHover(-1)}
+              aria-label={`${day.date}. Verified hits ${day.verified}. Suppressed FPs ${day.fp}. Blind rules ${day.blind}.`}
+            >
+              <span className="flex h-full w-2.5 flex-col justify-end overflow-hidden rounded-t-full">
+                {day.spike ? (
+                  <span className="block w-full" style={{ height: "46%", backgroundColor: "#fbbf24", backgroundImage: "repeating-linear-gradient(-45deg, #ea580c 0 2px, transparent 2px 5px)" }} />
+                ) : null}
+                <span className="block w-full bg-amber-400" style={{ height: "8%" }} />
+                <span className="block w-full bg-indigo-500" style={{ height: "42%" }} />
+              </span>
+            </button>
+          ))}
         </div>
       </div>
       <div className="mt-1.5 flex h-5 items-start justify-between gap-1.5">
@@ -579,44 +571,23 @@ function SignalHistogram() {
   )
 }
 
-export function SignalHorizon({ stages, stageId, patched, onStage, onAuthor }) {
+export function SignalHorizon({ onAuthor }) {
   return (
     <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm @min-[860px]:col-span-2">
-      <div className="shrink-0">
-        <h2 className="text-[15px] font-semibold tracking-tight text-slate-900">Telemetry Coverage Readiness & Signal Horizon</h2>
-        <p className="mt-0.5 text-[12px] text-slate-500">Empirical gap analysis of live schemas, alert volume, and where a new detection can be authored.</p>
-      </div>
-      <div className="mt-4 grid min-h-0 flex-1 items-center gap-5 @min-[860px]:grid-cols-[minmax(0,0.95fr)_minmax(0,1.15fr)]">
-        <CoverageDonut onAuthor={onAuthor} />
-        <div className="@min-[860px]:border-l @min-[860px]:border-slate-100 @min-[860px]:pl-6">
-          <SignalHistogram />
+      <div className="grid min-h-0 flex-1 items-start gap-5 @min-[860px]:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+        <div className="flex min-h-0 min-w-0 flex-col">
+          <h2 className="text-[15px] font-semibold tracking-tight text-slate-900">Telemetry Coverage Readiness</h2>
+          <p className="mt-0.5 text-[12px] text-slate-500">Live schema audit of verified rules, authorable gaps, and broken contracts.</p>
+          <div className="mt-3">
+            <CoverageDonut onAuthor={onAuthor} />
+          </div>
         </div>
-      </div>
-      <div className="mt-4 flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-medium text-indigo-700">✨ Empirical Gap Ready: T1556.006 (OktaLog 100% populated)</span>
-          <button type="button" onClick={onAuthor} className="inline-flex h-7 items-center rounded-lg bg-indigo-600 px-2.5 text-[11px] font-semibold text-white hover:bg-indigo-500">
-            Synthesize & Backtest Rule →
-          </button>
-        </div>
-        <div className="flex flex-wrap items-center gap-1.5">
-          {stages.map((stage, index) => {
-            const selected = stageId === stage.id
-            const impacted = RULES.filter((rule) => rule.degraded && !patched[rule.id] && rule.nodes.some((id) => stage.nodes.includes(id))).length
-            return (
-              <span key={stage.id} className="inline-flex items-center gap-1.5">
-                {index > 0 ? <span className="text-[11px] text-slate-300">•</span> : null}
-                <button
-                  type="button"
-                  aria-pressed={selected}
-                  onClick={() => onStage(stage.id)}
-                  className={`whitespace-nowrap rounded-full border px-2 py-1 text-[11px] font-medium transition hover:border-indigo-300 ${selected ? "border-indigo-300 bg-indigo-50 text-indigo-700" : "border-slate-200 bg-white text-slate-600"}`}
-                >
-                  {STAGE_CHIP[stage.id]} ({impacted})
-                </button>
-              </span>
-            )
-          })}
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col pr-1 @min-[860px]:border-l @min-[860px]:border-slate-100 @min-[860px]:pl-6">
+          <h2 className="text-[15px] font-semibold tracking-tight text-slate-900">Signal Horizon</h2>
+          <p className="mt-0.5 text-[12px] text-slate-500">14-day fidelity against alert-storm volume, suppressed false positives, and silent drops.</p>
+          <div className="mt-3 min-w-0 flex-1">
+            <SignalHistogram />
+          </div>
         </div>
       </div>
     </section>

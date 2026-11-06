@@ -1,223 +1,292 @@
-import { RULES } from "./model"
-import { usePulse } from "./PulseContext"
-import { SignalHorizon } from "./Charts"
-import { Card, Sparkline, ruleView } from "./ui"
+import { useId } from "react"
+import { areaPath, seriesPoints, smoothPath } from "./ui"
+
+const DRIFT_DAYS = ["Oct 28", "Oct 29", "Oct 30", "Oct 31", "Nov 1", "Nov 2", "Nov 3"]
+const DRIFT_NOTES = [null, null, null, null, "Nov 1 · WARP Cutover", "Nov 2 · AWS IAM", "Nov 3 · Falcon v7.14"]
+
+const EVENTS = [
+  { id: "falcon", name: "Falcon v7.14 Upgrade", domain: "Endpoint", impact: "4 Rules Blind", impactClass: "text-red-600" },
+  { id: "warp", name: "Cloudflare WARP Cutover", domain: "Identity", impact: "+340% Noise", impactClass: "text-amber-600" },
+  { id: "iam", name: "AWS IAM Role Rotation", domain: "Cloud", impact: "4.5h Ingestion Lag", impactClass: "text-orange-600" },
+]
+
+const NOISE_DAYS = [
+  { day: "Oct 30", raw: 1680, suppressed: 1180 },
+  { day: "Oct 31", raw: 2140, suppressed: 1620 },
+  { day: "Nov 1", raw: 1920, suppressed: 1420 },
+  { day: "Nov 2", raw: 2280, suppressed: 1680 },
+  { day: "Nov 3", raw: 1580, suppressed: 1200 },
+]
+
+const RAIL = [
+  ...Array.from({ length: 12 }, () => "bg-indigo-600"),
+  ...Array.from({ length: 2 }, () => "bg-amber-400"),
+  ...Array.from({ length: 2 }, () => "bg-red-500"),
+]
 
 export default function Overview() {
-  const pulse = usePulse()
-  const drop = pulse.drop
-  const stage = STAGES.find((item) => item.id === pulse.stageId)
-  const queue = RULES.filter((rule) => {
-    if (!rule.degraded || pulse.patched[rule.id]) return false
-    if (stage) return rule.nodes.some((id) => stage.nodes.includes(id))
-    return true
-  })
-
   return (
-    <div className="@container flex h-full min-h-0 flex-col">
-    <div className="grid min-h-0 flex-1 gap-3 overflow-y-auto @min-[860px]:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.8fr)] @min-[860px]:overflow-hidden">
-      <div className="flex min-h-0 min-w-0 flex-col gap-3">
-        <div className="grid shrink-0 gap-3 sm:grid-cols-2">
-          <Kpi
-            label="Detection Resilience Score (DRS)"
-            value={`${pulse.drs.toFixed(1)} / 100`}
-            delta={drop <= 0 ? "▲ Recovered" : `▼ ${drop.toFixed(1)} pts (24h)`}
-            deltaClass={drop <= 0 ? "text-emerald-600" : "text-rose-500"}
-            note={contractNote(pulse.patched, pulse.pending)}
-            spark={pulse.drsSeries}
-            sparkTone={drop <= 0 ? "healthy" : "critical"}
-          />
-          <Kpi
-            label="Mean Time to Detect Drift (MTTD-D)"
-            value="3m 42s"
-            delta="▼ 94% faster vs baseline"
-            deltaClass="text-emerald-600"
-            note="Real-time AST & telemetry contract validation."
-          />
-          <ContractsCard patched={pulse.patched} />
-          <Kpi
-            label="HITL Governance Queue"
-            value={`${pulse.pending} Pending Sign-Off`}
-            note="100% ground-truth replay verified on 30d lake."
-          />
-        </div>
-        <div className="grid min-h-0 flex-1 @min-[860px]:grid-cols-2">
-          <SignalHorizon
-            patched={pulse.patched}
-            stages={STAGES}
-            stageId={pulse.stageId}
-            onStage={(id) => pulse.dispatch({ type: "stage", id })}
-            onAuthor={() => pulse.dispatch({ type: "author", id: "t1556" })}
-          />
-        </div>
+    <div className="@container flex h-full min-h-0 flex-col overflow-y-auto bg-white px-8 pt-6 pb-5">
+      <div className="shrink-0">
+        <h1 className="text-2xl font-bold text-[#0B132B]">Command Center</h1>
+        <p className="mt-1 text-sm text-slate-500">Environment posture, signal fidelity, and governance at a glance.</p>
       </div>
-
-      <aside className="flex min-h-0 min-w-0 flex-col @min-[860px]:h-full">
-        <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          <div className="shrink-0 border-b border-slate-200/80 px-3.5 py-3">
-            <h2 className="text-[15px] font-semibold tracking-tight text-slate-900">Urgent Resilience Action Queue</h2>
-            <p className="mt-0.5 text-[12px] text-slate-500">
-              {stage ? `Filtered to ${stage.title}.` : "Open detections waiting on lead sign-off."}
+      <div className="mt-4 grid min-h-[176px] flex-[2] grid-cols-1 gap-5 @min-[980px]:grid-cols-4">
+        <article className="flex h-full min-w-0 flex-col justify-between rounded-2xl border border-slate-200/50 bg-[#F4F7FB] p-5">
+          <div>
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-xs font-bold tracking-wide text-slate-700">Environment Resilience</h2>
+              <span className="shrink-0 rounded-full border border-red-200/60 bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-600">↓ 11.6 pts</span>
+            </div>
+            <p className="mt-2">
+              <span className="inline-block font-mono text-3xl font-bold text-[#0B132B]">78.4</span>
+              <span className="ml-1.5 font-mono text-sm text-slate-400">/ 100</span>
             </p>
-            <p className="mt-0.5 text-[12px] text-slate-400">Showing {queue.length} open</p>
+            <div className="my-2 flex h-2 gap-1" role="img" aria-label="12 healthy, 2 degraded, 2 blind segments">
+              {RAIL.map((tone, index) => (
+                <span key={index} className={`h-full min-w-0 flex-1 rounded-sm ${tone}`} />
+              ))}
+            </div>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-200 hover:[&::-webkit-scrollbar-thumb]:bg-slate-300">
-            {queue.length === 0 ? (
-              <p className="px-3.5 py-8 text-[13px] text-slate-500">Nothing on this hop is waiting for a signature.</p>
-            ) : (
-              queue.map((rule) => (
-                <QueueCard
-                  key={rule.id}
-                  rule={rule}
-                  patched={pulse.patched}
-                  onOpen={() => pulse.dispatch({ type: "open", id: rule.id })}
-                />
-              ))
-            )}
+          <p className="font-mono text-[11px] text-slate-500">172 Verified • 8 Degraded • 4 0-Match</p>
+        </article>
+
+        <RibbonCard
+          label="Telemetry Estate"
+          pill="3.4 TB / day"
+          pillClass="border-slate-200/60 bg-white font-mono text-slate-600"
+          value="91%"
+          note="Healthy"
+          noteClass="text-emerald-600"
+          bar="91%"
+          barClass="bg-emerald-500"
+          footer="18 of 20 enterprise streams active"
+        />
+        <RibbonCard
+          label="Threat Surface"
+          pill="+2 Ready (AI)"
+          pillClass="border-indigo-200/60 bg-indigo-50 font-semibold text-indigo-700"
+          value="76%"
+          note="Covered"
+          noteClass="text-slate-500"
+          bar="76%"
+          barClass="bg-indigo-600"
+          footer="220 active rules • 28 uncovered gaps"
+        />
+        <RibbonCard
+          label="Signal-to-Noise"
+          pill="-74% Noise"
+          pillClass="border-emerald-200/60 bg-emerald-50 font-bold text-emerald-700"
+          value="86%"
+          note="Precision"
+          noteClass="text-amber-600"
+          bar="86%"
+          barClass="bg-amber-400"
+          footer="1,420 noisy alerts suppressed/day"
+        />
+      </div>
+
+      <div className="mt-5 grid min-h-0 flex-[5] grid-cols-1 items-stretch gap-6 @min-[980px]:grid-cols-3">
+        <article className="flex h-full min-w-0 flex-col rounded-3xl border border-slate-200/50 bg-[#F4F7FB] p-5">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <h2 className="text-sm font-bold text-[#0B132B]">Environment Shifts (7d)</h2>
+            <span className="shrink-0 rounded-full border border-amber-200/60 bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-600">18/20 Streams Stable • 12% Drifted</span>
           </div>
-        </Card>
-      </aside>
-    </div>
+          <DriftChart />
+          <div className="mt-2 space-y-2">
+            {EVENTS.map((event) => (
+              <div key={event.id} className="flex items-center justify-between gap-2 rounded-xl border border-slate-200/60 bg-white p-2.5 text-xs">
+                <span className="min-w-0 truncate font-medium text-slate-800">{event.name} <span className="font-normal text-slate-400">• {event.domain}</span></span>
+                <span className={`shrink-0 font-semibold ${event.impactClass}`}>{event.impact}</span>
+              </div>
+            ))}
+          </div>
+        </article>
+
+        <article className="flex h-full min-w-0 flex-col rounded-3xl border border-slate-200/50 bg-[#F4F7FB] p-5">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <h2 className="text-sm font-bold text-[#0B132B]">Signal Fidelity & Noise</h2>
+            <span className="shrink-0 rounded-full border border-emerald-200/60 bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700">-74% Noise</span>
+          </div>
+          <NoiseHistogram />
+          <div className="mt-2 grid grid-cols-3 gap-2 border-t border-slate-200/60 pt-2">
+            <div className="rounded-xl border border-slate-200/60 bg-white p-2 text-center">
+              <span className="font-mono text-sm font-bold text-emerald-600">-1,420</span>
+              <span className="block text-[10px] text-slate-400">Alerts Cut/d</span>
+            </div>
+            <div className="rounded-xl border border-slate-200/60 bg-white p-2 text-center">
+              <span className="font-mono text-sm font-bold text-indigo-600">100%</span>
+              <span className="block text-[10px] text-slate-400">TP Recall</span>
+            </div>
+            <div className="rounded-xl border border-slate-200/60 bg-white p-2 text-center">
+              <span className="font-mono text-sm font-bold text-slate-800">98.4%</span>
+              <span className="block text-[10px] text-slate-400">Precision</span>
+            </div>
+          </div>
+        </article>
+
+        <article className="flex h-full min-w-0 flex-col rounded-3xl border border-slate-200/50 bg-[#F4F7FB] p-5">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <h2 className="min-w-0 text-sm font-bold text-[#0B132B]">Human-in-the-Loop Governance</h2>
+            <span className="shrink-0 rounded-full border border-indigo-200/60 bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">30d Lake Verified</span>
+          </div>
+          <ReplayRing />
+          <div className="my-2 space-y-1.5 rounded-xl border border-slate-200/60 bg-white p-2.5 text-xs text-slate-600">
+            <p>✓ 30d Snowflake Lake Replay: <span className="font-semibold text-emerald-700">0 Logic Regressions</span></p>
+            <p>✓ AST Syntactic Schema Audit: <span className="font-semibold text-emerald-700">100% Contract Valid</span></p>
+            <p>✓ Purple Team Atomic Tests: <span className="font-semibold text-emerald-700">14/14 Retained</span></p>
+          </div>
+          <div className="mt-auto flex items-center gap-2">
+            <span className="shrink-0 rounded-full border border-amber-200/60 bg-amber-50 px-2 py-1 text-[10px] font-semibold text-amber-700">8 Sign-Off</span>
+            <span className="shrink-0 rounded-full border border-slate-200/60 bg-white px-2 py-1 text-[10px] font-semibold text-slate-700">2 PRs Ready</span>
+          </div>
+        </article>
+      </div>
     </div>
   )
 }
 
-const SEVERITY = {
-  critical: "text-rose-600",
-  degraded: "text-amber-700",
-  healthy: "text-emerald-600",
+const DRIFT_MARKS = {
+  4: { fill: "#f59e0b", ring: "#fffbeb" },
+  5: { fill: "#f97316", ring: "#fff7ed" },
+  6: { fill: "#ef4444", ring: "#fef2f2" },
 }
 
-const MODE_CHIP = {
-  silent: "bg-rose-50 text-rose-700",
-  noisy: "bg-amber-50 text-amber-800",
-  downstream: "bg-amber-50 text-amber-800",
-  lag: "bg-slate-100 text-amber-800",
-}
-
-function QueueCard({ rule, patched, onOpen }) {
-  const view = ruleView(rule, patched)
+function DriftChart() {
+  const rawId = useId().replace(/:/g, "")
+  const width = 320
+  const height = 120
+  const values = [8, 10, 12, 16, 42, 68, 96]
+  const points = seriesPoints(values, width, height, { t: 16, r: 16, b: 10, l: 16 }, { min: 0, max: 100 })
+  const line = smoothPath(points)
+  const fill = areaPath(points, height - 6)
   return (
-    <div className="border-b border-slate-100 px-3.5 py-3 last:border-b-0">
-      <div className="flex items-start justify-between gap-3">
-        <p className="text-[14px] font-semibold leading-snug text-slate-900">{rule.title}</p>
-        <span className={`inline-flex shrink-0 items-center gap-1 text-[12px] font-medium ${SEVERITY[view.tone] || SEVERITY.degraded}`}>
-          <span className="size-1.5 rounded-full bg-current" />
-          {view.severity}
-        </span>
-      </div>
-      <div className="mt-2 flex flex-wrap gap-1.5">
-        <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${MODE_CHIP[rule.status] || MODE_CHIP.noisy}`}>{view.pill}</span>
-        <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">Waiting on lead</span>
-        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">{rule.siem}</span>
-        <span className="rounded-full bg-slate-100 px-2 py-0.5 font-mono text-[11px] font-medium text-slate-600">{rule.technique}</span>
-        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">{rule.volume}</span>
-      </div>
-      <p className="mt-2 text-[13px] leading-snug text-slate-600">{rule.cause}</p>
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-        <p className="min-w-0 text-[12px] leading-snug text-slate-400">{rule.lineage.join(" → ")}</p>
-        <button
-          type="button"
-          onClick={onOpen}
-          className="inline-flex h-8 shrink-0 items-center rounded-lg bg-indigo-600 px-3 text-[12px] font-semibold text-white hover:bg-indigo-500"
-        >
-          Review & Remediate (HITL) →
-        </button>
-      </div>
-    </div>
-  )
-}
-
-const CONTRACTS = [
-  { id: "ProcessCommandLine", ruleId: "powershell", mode: "schema", className: "border-red-200 bg-red-50 text-red-700" },
-  { id: "trusted_egress.csv", ruleId: "okta", mode: "lookup", className: "border-amber-200 bg-amber-50 text-amber-800" },
-  { id: "DeviceId", ruleId: "lsass", mode: "webhook", className: "border-red-200 bg-red-50 text-red-700" },
-  { id: "STS Token", ruleId: "iam", mode: "lag", className: "border-slate-300 bg-slate-50 text-amber-800" },
-]
-
-const STAGES = [
-  {
-    id: "telemetry",
-    index: "01",
-    short: "Collectors",
-    title: "Telemetry Collectors (Falcon / CloudTrail)",
-    nodes: ["falcon", "cloudtrail"],
-    pill: "1 Schema Drift • 1 Auth Lag",
-    pillClass: "bg-rose-50 text-rose-700",
-    accent: "text-amber-700",
-  },
-  {
-    id: "cribl",
-    index: "02",
-    short: "Cribl Stream",
-    title: "Normalization Layer (Cribl Stream v2.4)",
-    nodes: ["cribl"],
-    pill: "ASIM Field Drop (process.cmd_line)",
-    pillClass: "bg-rose-50 text-rose-700",
-  },
-  {
-    id: "detection",
-    index: "03",
-    short: "SIEM Logic",
-    title: "Detection Engine (Sentinel / Splunk)",
-    nodes: ["sentinel", "splunk"],
-    pill: "1 Blind Rule • 1 FP Storm (+340%)",
-    pillClass: "bg-amber-50 text-amber-800",
-  },
-  {
-    id: "response",
-    index: "04",
-    short: "Torq SOAR",
-    title: "Response Webhooks (Torq SOAR)",
-    nodes: ["torq"],
-    pill: "1 Payload Contract Error (HTTP 422)",
-    pillClass: "bg-rose-50 text-rose-700",
-  },
-]
-
-function ContractsCard({ patched }) {
-  const open = CONTRACTS.filter((item) => !patched[item.ruleId])
-  const count = (mode) => open.filter((item) => item.mode === mode).length
-  const breaks = open.length
-  return (
-    <Card className="overflow-hidden p-3.5">
-      <p className="text-[12px] font-medium text-slate-500">Broken Telemetry Contracts</p>
-      <p className="mt-1 font-mono text-[22px] font-semibold tracking-tight text-slate-900">{breaks} Active Break{breaks === 1 ? "" : "s"}</p>
-      <p className="mt-1 text-[12px] leading-snug text-slate-600">
-        {count("schema")} Schema Mutation • {count("lookup")} Lookup Drift • {count("webhook")} Webhook Drop • {count("lag")} Lag
-      </p>
-      <div className="mt-2 flex flex-wrap gap-1">
-        {CONTRACTS.map((item) => {
-          const healed = patched[item.ruleId]
+    <div className="my-2 flex min-h-[90px] flex-1 flex-col rounded-2xl border border-slate-200/60 bg-white px-3 pt-3 pb-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+      <div className="relative min-h-0 flex-1">
+        <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="absolute inset-0 h-full w-full" role="img" aria-label="7-day drift curve, low through Oct 30, rising on Nov 1 and peaking on Nov 3">
+          <defs>
+            <linearGradient id={`drift-fill-${rawId}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.32" />
+              <stop offset="70%" stopColor="#f59e0b" stopOpacity="0.06" />
+              <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          {[0.28, 0.56, 0.84].map((step) => {
+            const y = 16 + step * (height - 26)
+            return <line key={step} x1="12" x2={width - 12} y1={y} y2={y} stroke="#e2e8f0" strokeWidth="1" strokeDasharray="2 5" vectorEffect="non-scaling-stroke" />
+          })}
+          <path d={fill} fill={`url(#drift-fill-${rawId})`} />
+          <path d={line} fill="none" stroke="#fbbf24" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.35" vectorEffect="non-scaling-stroke" />
+          <path d={line} fill="none" stroke="#d97706" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+        </svg>
+        {points.map((point, index) => {
+          const mark = DRIFT_MARKS[index]
+          if (!mark) return null
           return (
-            <span key={item.id} className={`rounded-full px-2 py-0.5 font-mono text-[10px] ${healed ? "bg-emerald-50 text-emerald-800" : item.className}`}>
-              {item.id}
-            </span>
+            <span
+              key={DRIFT_DAYS[index]}
+              title={DRIFT_NOTES[index]}
+              className="absolute size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-md"
+              style={{ left: `${(point.x / width) * 100}%`, top: `${(point.y / height) * 100}%`, background: mark.fill, boxShadow: `0 0 0 4px ${mark.ring}` }}
+            />
           )
         })}
       </div>
-    </Card>
+      <div className="mt-2 flex justify-between font-mono text-[10px] text-slate-400">
+        {DRIFT_DAYS.map((label, index) => (
+          <span key={label} className={DRIFT_MARKS[index] ? "font-semibold text-slate-600" : ""}>{label}</span>
+        ))}
+      </div>
+    </div>
   )
 }
 
-function contractNote(patched, pending) {
-  const breaks = CONTRACTS.filter((item) => !patched[item.ruleId]).length
-  if (breaks === 0 || pending === 0) return "No upstream contract breaks on production detections"
-  const breakLabel = breaks === 1 ? "break" : "breaks"
-  const detectionLabel = pending === 1 ? "detection" : "detections"
-  return `${breaks} upstream contract ${breakLabel} impacting ${pending} production ${detectionLabel}`
+function NoiseHistogram() {
+  const scale = Math.max(...NOISE_DAYS.map((entry) => entry.raw))
+  return (
+    <div className="my-2 flex min-h-[130px] flex-1 flex-col rounded-2xl border border-slate-200/60 bg-white px-3 pt-3 pb-2">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[10px] text-slate-500">
+        <span className="inline-flex items-center gap-1.5"><span className="size-2 rounded-full bg-gradient-to-b from-amber-300 to-amber-500" /> Raw SIEM Alert Storm</span>
+        <span className="inline-flex items-center gap-1.5"><span className="size-2 rounded-full bg-gradient-to-b from-emerald-300 to-emerald-500" /> AI-Suppressed Volume</span>
+      </div>
+      <div className="mt-3 flex min-h-0 flex-1 flex-col">
+        <div className="flex min-h-0 flex-1 gap-1.5">
+          <div className="relative w-9 shrink-0 font-mono text-[9px] text-slate-400">
+            <span className="absolute top-0 right-0">{scale.toLocaleString()}</span>
+            <span className="absolute right-0 bottom-0">0</span>
+          </div>
+          <div className="flex min-h-0 flex-1 items-end justify-between gap-1">
+            {NOISE_DAYS.map((entry, index) => {
+              const share = Math.round((entry.suppressed / entry.raw) * 100)
+              return (
+                <div key={entry.day} className="group relative flex h-full min-w-0 flex-1 items-end justify-center gap-1 rounded-xl bg-slate-50/80 px-0.5">
+                  <span className={`pointer-events-none absolute bottom-[calc(100%-8px)] z-10 hidden rounded-lg bg-[#0B132B] px-2.5 py-1.5 text-[10px] leading-snug whitespace-nowrap text-white shadow-lg group-hover:block ${index === 0 ? "left-0" : index === NOISE_DAYS.length - 1 ? "right-0" : "left-1/2 -translate-x-1/2"}`}>
+                    <span className="block font-semibold">{entry.day}</span>
+                    <span className="block text-amber-200">Raw {entry.raw.toLocaleString()}</span>
+                    <span className="block text-emerald-200">Suppressed {entry.suppressed.toLocaleString()}</span>
+                    <span className="block text-white/70">{share}% of raw volume</span>
+                  </span>
+                  <div className="w-2.5 rounded-t-md bg-gradient-to-t from-amber-500 to-amber-300 shadow-[0_6px_12px_-6px_rgba(245,158,11,0.8)] sm:w-3" style={{ height: `${(entry.raw / scale) * 100}%` }} />
+                  <div className="w-2.5 rounded-t-md bg-gradient-to-t from-emerald-500 to-emerald-300 shadow-[0_6px_12px_-6px_rgba(16,185,129,0.8)] sm:w-3" style={{ height: `${(entry.suppressed / scale) * 100}%` }} />
+                </div>
+              )
+            })}
+          </div>
+        </div>
+        <div className="mt-1.5 ml-10 flex justify-between gap-1 font-mono text-[10px] text-slate-400">
+          {NOISE_DAYS.map((entry) => <span key={entry.day} className="flex-1 text-center">{entry.day}</span>)}
+        </div>
+      </div>
+    </div>
+  )
 }
 
-function Kpi({ label, value, delta, deltaClass = "text-slate-500", note, spark, sparkTone }) {
+function ReplayRing() {
+  const radius = 34
+  const length = 2 * Math.PI * radius
+  const gap = 10
+  const validated = length * (4 / 12) - gap
+  const pending = length * (8 / 12) - gap
   return (
-    <Card className="p-3.5">
-      <p className="text-[12px] font-medium text-slate-500">{label}</p>
-      <div className="mt-1 flex items-center justify-between gap-3">
-        <p className="font-mono text-[22px] font-semibold tracking-tight text-slate-900">{value}</p>
-        {spark ? <Sparkline values={spark} tone={sparkTone} width={40} height={28} /> : null}
+    <div className="my-1 flex min-h-[110px] flex-1 flex-col items-center justify-center">
+      <div className="relative aspect-square h-full max-h-64">
+        <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90 drop-shadow-sm" role="img" aria-label="12 of 12 staged fixes replayed. 4 auto-validated, 8 awaiting lead sign-off">
+          <circle cx="50" cy="50" r={radius} fill="white" stroke="#e8eef5" strokeWidth="11" />
+          <circle cx="50" cy="50" r={radius} fill="none" stroke="#10b981" strokeWidth="11" strokeLinecap="round" strokeDasharray={`${validated} ${length}`} />
+          <circle cx="50" cy="50" r={radius} fill="none" stroke="#4f46e5" strokeWidth="11" strokeLinecap="round" strokeDasharray={`${pending} ${length}`} strokeDashoffset={-(validated + gap)} />
+        </svg>
+        <div className="absolute inset-0 grid place-items-center text-center">
+          <div>
+            <span className="block font-mono text-xl font-bold tracking-tight text-[#0B132B]">12 / 12</span>
+            <span className="mt-0.5 block text-[10px] font-medium tracking-[0.14em] text-slate-400 uppercase">Replayed</span>
+          </div>
+        </div>
       </div>
-      {delta ? <p className={`mt-0.5 text-[12px] font-medium ${deltaClass}`}>{delta}</p> : null}
-      {note ? <p className="mt-1 text-[12px] leading-snug text-slate-600">{note}</p> : null}
-    </Card>
+      <div className="mt-2 flex items-center gap-3 text-[10px] font-medium">
+        <span className="inline-flex items-center gap-1.5 text-emerald-700"><span className="size-1.5 rounded-full bg-emerald-500" />4 validated</span>
+        <span className="inline-flex items-center gap-1.5 text-indigo-700"><span className="size-1.5 rounded-full bg-indigo-600" />8 sign-off</span>
+      </div>
+    </div>
+  )
+}
+
+function RibbonCard({ label, pill, pillClass, value, note, noteClass, bar, barClass, footer }) {
+  return (
+    <article className="flex h-full min-w-0 flex-col justify-between rounded-2xl border border-slate-200/50 bg-[#F4F7FB] p-5">
+      <div>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-xs font-bold tracking-wide text-slate-700">{label}</h2>
+          <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] ${pillClass}`}>{pill}</span>
+        </div>
+        <p className="mt-2">
+          <span className="font-mono text-3xl font-bold text-[#0B132B]">{value}</span>
+          <span className={`ml-2 text-xs font-medium ${noteClass}`}>{note}</span>
+        </p>
+        <div className="mt-2 mb-2 h-2 overflow-hidden rounded-full bg-slate-200">
+          <div className={`h-full rounded-full ${barClass}`} style={{ width: bar }} />
+        </div>
+      </div>
+      <p className="text-[11px] text-slate-500">{footer}</p>
+    </article>
   )
 }

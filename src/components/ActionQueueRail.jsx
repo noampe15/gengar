@@ -65,7 +65,7 @@ export default function ActionQueueRail({
     ? "Ranked by detection SLA × coverage"
     : compact
       ? "Ranked by detection-SLA risk across the enterprise perimeter"
-      : "Requires human-in-the-loop approval"
+      : "Requires analyst approval"
 
   return (
     <section

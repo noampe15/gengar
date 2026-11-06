@@ -29,7 +29,7 @@ const AUTHORING = {
 | where isnotempty(UserIdentity.sessionContext)
 | summarize Events = count(), DistinctAsns = dcount(SourceIpAsn) by SessionIssuer = tostring(UserIdentity.sessionContext.sessionIssuer.arn), bin(TimeGenerated, 10m)
 | where Events >= 3 and DistinctAsns >= 2`,
-    hunkB: `// HITL: drop the corporate NAT gateway and the Bedrock batch role seen in the 30d lake
+    hunkB: `// Lead sign-off: drop the corporate NAT gateway and the Bedrock batch role seen in the 30d lake
 | where SourceIpAsn != 16509
 | where SessionIssuer !contains "bedrock-batch-invoke"`,
     proof: "Historical Matches (30d): 1 True Attack Simulation Caught (Red Team session-replay, Oct 22) • 0 False Positives (ASN 16509 bursts suppressed by Hunk B) • Estimated SOC Alert Volume: ~0.2 alerts/month",
@@ -63,12 +63,12 @@ export default function Drawer() {
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <button type="button" aria-label="Close review drawer" className="absolute inset-0 bg-slate-900/30" onClick={() => pulse.dispatch({ type: "close" })} />
-      <aside role="dialog" aria-modal="true" aria-labelledby="hitl-title" className="drawer-in relative flex h-full w-full max-w-3xl flex-col border-l border-slate-200 bg-[#F8FAFC] shadow-xl">
+      <aside role="dialog" aria-modal="true" aria-labelledby="review-title" className="drawer-in relative flex h-full w-full max-w-3xl flex-col border-l border-slate-200 bg-[#F8FAFC] shadow-xl">
         <header className="border-b border-slate-200 bg-white px-5 py-4">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-[11px] font-medium tracking-wide text-slate-400 uppercase">SecOps Detection Agent & HITL Governance</p>
-              <h2 id="hitl-title" className="mt-1 text-[16px] font-semibold text-slate-900">{rule.title}</h2>
+              <p className="text-[11px] font-medium tracking-wide text-slate-400 uppercase">SecOps Detection Agent & Governance</p>
+              <h2 id="review-title" className="mt-1 text-[16px] font-semibold text-slate-900">{rule.title}</h2>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <span className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[11px] text-slate-700">{rule.technique}</span>
                 <StatusPill tone={rule.tone} pulse={rule.tone === "critical" && !rule.patched}>
@@ -102,7 +102,7 @@ export default function Drawer() {
                   <p className="text-[12px] font-semibold text-slate-900">Hunk B · Detection logic & noise exclusion</p>
                   <StatusPill tone="degraded">Modifies Detection Scope — Explicit Lead Sign-Off Required</StatusPill>
                 </div>
-                <p className="mt-1 text-[11px] text-slate-500">Tier-3 · HITL required.</p>
+                <p className="mt-1 text-[11px] text-slate-500">Tier-3 · Lead sign-off required.</p>
                 <CodeBlock className="mt-2">{drawer.hunkBCode}</CodeBlock>
                 <label className="mt-3 flex items-center gap-2 text-[12.5px] text-slate-800">
                   <input
@@ -239,12 +239,12 @@ function AuthoringDrawer() {
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <button type="button" aria-label="Close review drawer" className="absolute inset-0 bg-slate-900/30" onClick={() => pulse.dispatch({ type: "close" })} />
-      <aside role="dialog" aria-modal="true" aria-labelledby="hitl-title" className="drawer-in relative flex h-full w-full max-w-3xl flex-col border-l border-slate-200 bg-[#F8FAFC] shadow-xl">
+      <aside role="dialog" aria-modal="true" aria-labelledby="review-title" className="drawer-in relative flex h-full w-full max-w-3xl flex-col border-l border-slate-200 bg-[#F8FAFC] shadow-xl">
         <header className="border-b border-slate-200 bg-white px-5 py-4">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-[11px] font-medium tracking-wide text-slate-400 uppercase">Net-New Detection Authoring</p>
-              <h2 id="hitl-title" className="mt-1 text-[16px] font-semibold text-slate-900">{gap.threat}</h2>
+              <h2 id="review-title" className="mt-1 text-[16px] font-semibold text-slate-900">{gap.threat}</h2>
               <span className="mt-2 inline-flex rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[11px] text-slate-700">{gap.technique}</span>
             </div>
             <button type="button" onClick={() => pulse.dispatch({ type: "close" })} className="rounded-md border border-slate-200 px-2 py-1 text-[12px] font-semibold text-slate-600">
@@ -262,7 +262,7 @@ function AuthoringDrawer() {
             </div>
           </section>
           <section className="space-y-3">
-            <p className="text-[13px] font-semibold text-slate-900">Step 2 — Synthesized Production KQL with HITL hunks</p>
+            <p className="text-[13px] font-semibold text-slate-900">Step 2 — Synthesized Production KQL with review hunks</p>
             <article className="rounded-xl border border-emerald-200 bg-white p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-[12px] font-semibold text-slate-900">Hunk A — Core Detection Logic & Threshold Aggregation — Auto-Validated against Schema</p>
@@ -272,8 +272,8 @@ function AuthoringDrawer() {
             </article>
             <article className={`rounded-xl border bg-white p-3 ${drawer.hunkBApproved ? "border-amber-300" : "border-amber-200"}`}>
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-[12px] font-semibold text-slate-900">Hunk B — Environment-Specific Baseline Tuning & Noise Guardrail — HITL Sign-Off Required</p>
-                <StatusPill tone="degraded">HITL Sign-Off Required</StatusPill>
+                <p className="text-[12px] font-semibold text-slate-900">Hunk B — Environment-Specific Baseline Tuning & Noise Guardrail — Lead Sign-Off Required</p>
+                <StatusPill tone="degraded">Lead Sign-Off Required</StatusPill>
               </div>
               <CodeBlock className="mt-2">{gap.hunkB}</CodeBlock>
               <label className="mt-3 flex items-center gap-2 text-[12.5px] text-slate-800">
@@ -315,7 +315,7 @@ function AuthoringDrawer() {
             {drawer.replay === "done" ? <p className="mt-3 text-[12.5px] leading-snug text-slate-700">{gap.proof}</p> : null}
           </section>
           <section>
-            <p className="text-[13px] font-semibold text-slate-900">Step 4 — HITL Sign-Off & Detection-as-Code Deployment</p>
+            <p className="text-[13px] font-semibold text-slate-900">Step 4 — Lead Sign-Off & Detection-as-Code Deployment</p>
             <p className="mt-1 text-[12px] text-slate-500">Hunk B must be approved and a justification selected after the backtest before the pull request can open.</p>
           </section>
         </div>

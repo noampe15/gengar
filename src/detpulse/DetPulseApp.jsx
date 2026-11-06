@@ -3,26 +3,27 @@ import DetectionsView from "./DetectionsView"
 import Drawer from "./Drawer"
 import Overview from "./Overview"
 import ParsersView from "./ParsersView"
+import RemediationView from "./RemediationView"
 import SupplyChainView from "./SupplyChainView"
 import { PulseProvider, usePulse } from "./PulseContext"
-import TopBar, { SideNav } from "./TopBar"
+import { SideNav } from "./TopBar"
 
 function Shell() {
   const { view } = usePulse()
   return (
-    <div className="flex h-svh overflow-hidden bg-[#F8FAFC] text-slate-900">
-      <SideNav />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar />
-        <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 py-3 md:px-5">
+    <div className="flex h-svh overflow-hidden bg-[#E7EDF5] p-3 text-slate-900">
+      <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden rounded-[28px] border border-slate-200/60 bg-white shadow-sm">
+        <SideNav />
+        <main className="min-h-0 min-w-0 flex-1 overflow-hidden">
           {view === "overview" ? (
             <Overview />
           ) : (
-            <div className="min-h-0 flex-1 overflow-y-auto">
+            <div className="h-full overflow-y-auto px-8 pt-6 pb-5">
               {view === "supply" ? <SupplyChainView /> : null}
               {view === "detections" ? <DetectionsView /> : null}
               {view === "parsers" ? <ParsersView /> : null}
               {view === "automations" ? <AutomationsView /> : null}
+              {view === "remediation" ? <RemediationView /> : null}
             </div>
           )}
         </main>

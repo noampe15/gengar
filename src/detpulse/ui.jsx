@@ -2,7 +2,7 @@ import { useId } from "react"
 
 export function Card({ className = "", children }) {
   return (
-    <section className={`rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_3px_0_rgba(0,0,0,0.02)] ${className}`}>
+    <section className={`overflow-hidden rounded-3xl border border-slate-200/50 bg-white shadow-sm ${className}`}>
       {children}
     </section>
   )

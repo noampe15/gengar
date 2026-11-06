@@ -9,6 +9,7 @@ const INITIAL = {
   policy: { schema: "manual", lookup: "backtest", soar: "dual" },
   nodeId: "",
   stageId: "",
+  remediationTier: "all",
   patched: {},
   drawer: null,
 }
@@ -16,7 +17,14 @@ const INITIAL = {
 function reducer(state, action) {
   switch (action.type) {
     case "view":
-      return { ...state, view: action.view, policyOpen: false }
+      return {
+        ...state,
+        view: action.view,
+        policyOpen: false,
+        remediationTier: action.tier || (action.view === "remediation" ? "all" : state.remediationTier),
+      }
+    case "remediation-tier":
+      return { ...state, remediationTier: action.tier }
     case "policy-toggle":
       return { ...state, policyOpen: !state.policyOpen }
     case "policy-close":

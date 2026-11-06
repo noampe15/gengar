@@ -3,12 +3,6 @@ import { EDGES, NODES, PLAYBOOKS, RULES, litNodeIds } from "./model"
 import { usePulse } from "./PulseContext"
 import { Card } from "./ui"
 
-const FILL = {
-  healthy: { fill: "#f0fdf4", stroke: "#86efac", ink: "#166534" },
-  degraded: { fill: "#fffbeb", stroke: "#fcd34d", ink: "#92400e" },
-  critical: { fill: "#fef2f2", stroke: "#fca5a5", ink: "#991b1b" },
-}
-
 const METRICS = {
   falcon: ["4.8k EPS", "ASIM Contract: 1 Key Mutated"],
   okta: ["840 EPS", "CIM Contract: 100%"],
@@ -252,7 +246,7 @@ export default function Lineage() {
 
   return (
     <div className="space-y-4">
-      <Card>
+      <Card className="bg-[#F4F7FB]">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
           <p className="text-[12px] text-slate-500">Select any telemetry source, pipeline worker, or SIEM hop to inspect live payload schemas, field normalization contracts, and downstream rule impact.</p>
         </div>
@@ -315,8 +309,9 @@ export default function Lineage() {
         </div>
       </Card>
 
-      <section className="grid grid-cols-1 gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:grid-cols-3">
+      <section className="grid grid-cols-1 gap-4 rounded-3xl border border-slate-200/50 bg-[#F4F7FB] p-5 lg:grid-cols-3">
         <div>
+          <div className="rounded-2xl border border-slate-200/60 bg-white p-4">
           <p className="text-[11px] font-semibold tracking-wide text-slate-400">Upstream Payload & Schema State</p>
           <p className="mt-1 text-[13px] font-semibold text-slate-900">{selected.title}</p>
           <div className="mt-2 rounded-xl bg-slate-950 p-3.5 font-mono text-xs text-slate-100">
@@ -326,16 +321,17 @@ export default function Lineage() {
             <p className="text-slate-400">{profile.lag}</p>
             <p className="text-slate-400">{profile.auth}</p>
           </div>
+          </div>
         </div>
-        <div>
+        <div className="rounded-2xl border border-slate-200/60 bg-white p-4">
           <p className="text-[11px] font-semibold tracking-wide text-slate-400">Pipeline Normalization & Field Contract</p>
           <p className="mt-1 text-[13px] font-semibold text-slate-900">ASIM / OCSF Mapping</p>
           <div className="mt-2 space-y-2">
             {profile.rows.map(([expected, status, bad]) => (
-              <div key={expected} className="rounded-lg border border-slate-200 px-3 py-2">
+              <div key={expected} className="rounded-xl border border-slate-200/70 bg-slate-50 px-3 py-2">
                 <p className="text-[11px] text-slate-500">Expected SIEM Field</p>
                 <p className="font-mono text-[12px] text-slate-900">{expected}</p>
-                <p className={`mt-1 text-[12px] ${bad ? "text-rose-600" : "text-emerald-700"}`}>➔ Status: {status}</p>
+                <p className={`mt-1 text-[12px] ${bad ? "text-red-600" : "text-emerald-700"}`}>➔ Status: {status}</p>
               </div>
             ))}
           </div>
@@ -345,7 +341,7 @@ export default function Lineage() {
               type="button"
               aria-pressed={fixIn === "siem"}
               onClick={() => setFixIn("siem")}
-              className={`rounded-full border px-2 py-1 text-[11px] font-semibold ${fixIn === "siem" ? "border-indigo-300 bg-indigo-50 text-indigo-700" : "border-slate-200 text-slate-600"}`}
+              className={`rounded-full px-3 py-1 text-[11px] font-semibold ${fixIn === "siem" ? "bg-blue-100/80 text-blue-700" : "border border-slate-200/80 bg-slate-50 text-slate-600"}`}
             >
               Patch in SIEM KQL
             </button>
@@ -354,24 +350,24 @@ export default function Lineage() {
               type="button"
               aria-pressed={fixIn === "cribl"}
               onClick={() => setFixIn("cribl")}
-              className={`rounded-full border px-2 py-1 text-[11px] font-semibold ${fixIn === "cribl" ? "border-indigo-300 bg-indigo-50 text-indigo-700" : "border-slate-200 text-slate-600"}`}
+              className={`rounded-full px-3 py-1 text-[11px] font-semibold ${fixIn === "cribl" ? "bg-blue-100/80 text-blue-700" : "border border-slate-200/80 bg-slate-50 text-slate-600"}`}
             >
               Push Coalesce to Cribl Pack
             </button>
           </div>
         </div>
-        <div>
-          <p className="text-[11px] font-semibold tracking-wide text-slate-400">Downstream Blast Radius & Direct HITL Action</p>
+        <div className="rounded-2xl border border-slate-200/60 bg-white p-4">
+          <p className="text-[11px] font-semibold tracking-wide text-slate-400">Downstream Blast Radius & Direct Remediation</p>
           <ul className="mt-2 space-y-2">
             {touched.filter((rule) => rule.degraded && !patched[rule.id]).map((rule) => (
-              <li key={rule.id} className="rounded-lg border border-slate-200 px-3 py-2 text-[12px]">
+              <li key={rule.id} className="rounded-xl border border-slate-200/70 bg-slate-50 px-3 py-2 text-[12px]">
                 <span className="font-mono text-[11px] text-slate-500">{rule.technique}</span>
                 <span className="ml-1.5 font-semibold text-slate-900">{rule.title}</span>
-                <span className="mt-0.5 block text-rose-600">{rule.volume}</span>
+                <span className="mt-0.5 block text-red-600">{rule.volume}</span>
               </li>
             ))}
             {playbooks.filter((playbook) => playbook.error && touched.some((rule) => rule.id === playbook.ruleId && rule.degraded && !patched[rule.id])).map((playbook) => (
-              <li key={playbook.id} className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-[12px] text-rose-800">
+              <li key={playbook.id} className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[12px] text-red-800">
                 {playbook.name} [HTTP 422]
               </li>
             ))}
@@ -381,9 +377,9 @@ export default function Lineage() {
             <button
               type="button"
               onClick={() => dispatch({ type: "open", id: openRule.id })}
-              className="mt-3 inline-flex h-8 items-center rounded-lg bg-indigo-600 px-3 text-[12px] font-semibold text-white hover:bg-indigo-500"
+              className="mt-3 inline-flex h-8 items-center rounded-xl bg-slate-900 px-3 text-[12px] font-semibold text-white transition hover:bg-indigo-600"
             >
-              Inspect & Remediate in HITL Drawer →
+              Inspect & Remediate →
             </button>
           ) : (
             <p className="mt-3 text-[12px] text-emerald-700">No open contract break on this hop.</p>
@@ -396,7 +392,8 @@ export default function Lineage() {
 
 function NodeCard({ node, patched, selected, dim, onSelect }) {
   const live = liveNode(node, patched)
-  const palette = FILL[live.tone]
+  const dot = live.tone === "critical" ? "bg-red-500" : live.tone === "degraded" ? "bg-amber-400" : "bg-emerald-500"
+  const ink = live.tone === "critical" ? "text-red-600" : live.tone === "degraded" ? "text-amber-700" : "text-emerald-700"
   const [left, right] = METRICS[node.id] || ["—", "—"]
   return (
     <button
@@ -404,12 +401,14 @@ function NodeCard({ node, patched, selected, dim, onSelect }) {
       data-node={node.id}
       aria-pressed={selected}
       onClick={onSelect}
-      className={`w-full rounded-xl border px-3.5 py-2.5 text-left transition ${selected ? "ring-2 ring-indigo-500" : ""} ${dim ? "opacity-40" : ""}`}
-      style={{ backgroundColor: palette.fill, borderColor: selected ? "#4f46e5" : palette.stroke }}
+      className={`w-full rounded-2xl border bg-white px-3.5 py-2.5 text-left shadow-sm transition ${selected ? "border-indigo-300 ring-2 ring-indigo-500" : "border-slate-200/80 hover:border-slate-300"} ${dim ? "opacity-40" : ""}`}
     >
-      <p className="text-[13px] font-semibold leading-snug text-slate-900">{node.title}</p>
-      <p className="text-[11px] font-semibold" style={{ color: palette.ink }}>{live.badge}</p>
-      <div className="mt-1.5 flex items-center justify-between gap-2 border-t border-black/5 pt-1.5 font-mono text-[11px] leading-tight text-slate-500">
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-[13px] font-semibold leading-snug text-slate-900">{node.title}</p>
+        <span className={`mt-1 size-2 shrink-0 rounded-full ${dot}`} />
+      </div>
+      <p className={`text-[11px] font-semibold ${ink}`}>{live.badge}</p>
+      <div className="mt-1.5 flex items-center justify-between gap-2 border-t border-slate-100 pt-1.5 font-mono text-[11px] leading-tight text-slate-500">
         <span>{left}</span>
         <span className="text-right">{right}</span>
       </div>
