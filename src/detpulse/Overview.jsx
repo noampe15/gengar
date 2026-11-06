@@ -19,8 +19,8 @@ const NOISE_DAYS = [
 ]
 
 const RAIL = [
-  ...Array.from({ length: 12 }, () => "bg-indigo-600"),
-  ...Array.from({ length: 2 }, () => "bg-amber-400"),
+  ...Array.from({ length: 11 }, () => "bg-indigo-600"),
+  ...Array.from({ length: 3 }, () => "bg-amber-400"),
   ...Array.from({ length: 2 }, () => "bg-red-500"),
 ]
 
@@ -32,57 +32,57 @@ export default function Overview() {
         <p className="mt-1 text-sm text-slate-500">Environment posture, signal fidelity, and governance at a glance.</p>
       </div>
       <div className="mt-4 grid min-h-[176px] flex-[2] grid-cols-1 gap-5 @min-[980px]:grid-cols-4">
-        <article className="flex h-full min-w-0 flex-col justify-between rounded-2xl border border-slate-200/50 bg-[#F4F7FB] p-5">
-          <div>
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="text-xs font-bold tracking-wide text-slate-700">Environment Resilience</h2>
-              <span className="shrink-0 rounded-full border border-red-200/60 bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-600">↓ 11.6 pts</span>
-            </div>
-            <p className="mt-2">
-              <span className="inline-block font-mono text-3xl font-bold text-[#0B132B]">78.4</span>
+        <article className="flex h-full min-h-[176px] min-w-0 flex-col justify-between rounded-2xl border border-slate-200/50 bg-[#F4F7FB] p-5">
+          <div className="flex items-center justify-between gap-2 whitespace-nowrap">
+            <h2 className="text-xs font-bold whitespace-nowrap text-slate-700">Environment Resilience</h2>
+            <span className="shrink-0 rounded-full border border-red-200/60 bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-600">↓ 9.4 pts</span>
+          </div>
+          <div className="my-auto flex flex-col justify-center py-3">
+            <p>
+              <span className="inline-block font-mono text-3xl font-bold text-[#0B132B]">81.2</span>
               <span className="ml-1.5 font-mono text-sm text-slate-400">/ 100</span>
             </p>
-            <div className="my-2 flex h-2 gap-1" role="img" aria-label="12 healthy, 2 degraded, 2 blind segments">
+            <div className="mt-2 flex h-2 gap-1" role="img" aria-label="11 healthy, 3 degraded, 2 blind segments">
               {RAIL.map((tone, index) => (
                 <span key={index} className={`h-full min-w-0 flex-1 rounded-sm ${tone}`} />
               ))}
             </div>
           </div>
-          <p className="font-mono text-[11px] text-slate-500">172 Verified • 8 Degraded • 4 0-Match</p>
+          <p className="truncate border-t border-slate-200/50 pt-2 text-[11px] whitespace-nowrap text-slate-500">168 Verified • 7 Deg • 5 Zero</p>
         </article>
 
         <RibbonCard
           label="Telemetry Estate"
-          pill="3.4 TB / day"
+          pill="2.8 TB / day"
           pillClass="border-slate-200/60 bg-white font-mono text-slate-600"
-          value="91%"
+          value="87%"
           note="Healthy"
           noteClass="text-emerald-600"
-          bar="91%"
+          bar="87%"
           barClass="bg-emerald-500"
-          footer="18 of 20 enterprise streams active"
+          footer="17 of 20 enterprise streams active"
         />
         <RibbonCard
           label="Threat Surface"
-          pill="+2 Ready (AI)"
+          pill="+3 Ready (AI)"
           pillClass="border-indigo-200/60 bg-indigo-50 font-semibold text-indigo-700"
-          value="76%"
+          value="69%"
           note="Covered"
           noteClass="text-slate-500"
-          bar="76%"
+          bar="69%"
           barClass="bg-indigo-600"
-          footer="220 active rules • 28 uncovered gaps"
+          footer="198 active rules • 89 uncovered gaps"
         />
         <RibbonCard
           label="Signal-to-Noise"
-          pill="-74% Noise"
+          pill="-68% Noise"
           pillClass="border-emerald-200/60 bg-emerald-50 font-bold text-emerald-700"
-          value="86%"
+          value="83%"
           note="Precision"
           noteClass="text-amber-600"
-          bar="86%"
+          bar="83%"
           barClass="bg-amber-400"
-          footer="1,420 noisy alerts suppressed/day"
+          footer="1,310 noisy alerts suppressed/day"
         />
       </div>
 
@@ -128,17 +128,27 @@ export default function Overview() {
         <article className="flex h-full min-w-0 flex-col rounded-3xl border border-slate-200/50 bg-[#F4F7FB] p-5">
           <div className="mb-2 flex items-center justify-between gap-3">
             <h2 className="min-w-0 text-sm font-bold text-[#0B132B]">Human-in-the-Loop Governance</h2>
-            <span className="shrink-0 rounded-full border border-indigo-200/60 bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">30d Lake Verified</span>
+            <span className="shrink-0 rounded-full border border-emerald-200/60 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold whitespace-nowrap text-emerald-700">▲ 3.4 pts (7d)</span>
           </div>
           <ReplayRing />
-          <div className="my-2 space-y-1.5 rounded-xl border border-slate-200/60 bg-white p-2.5 text-xs text-slate-600">
-            <p>✓ 30d Snowflake Lake Replay: <span className="font-semibold text-emerald-700">0 Logic Regressions</span></p>
-            <p>✓ AST Syntactic Schema Audit: <span className="font-semibold text-emerald-700">100% Contract Valid</span></p>
-            <p>✓ Purple Team Atomic Tests: <span className="font-semibold text-emerald-700">14/14 Retained</span></p>
-          </div>
-          <div className="mt-auto flex items-center gap-2">
-            <span className="shrink-0 rounded-full border border-amber-200/60 bg-amber-50 px-2 py-1 text-[10px] font-semibold text-amber-700">8 Sign-Off</span>
-            <span className="shrink-0 rounded-full border border-slate-200/60 bg-white px-2 py-1 text-[10px] font-semibold text-slate-700">2 PRs Ready</span>
+          <div className="my-2.5 rounded-2xl border border-slate-200/60 bg-white p-3.5">
+            <div className="grid grid-cols-4 gap-2 border-b border-slate-100 pb-3 text-left">
+              {[
+                ["Attempted", "142"],
+                ["Succeeded", "130"],
+                ["Escalated", "12"],
+                ["Failed", "0"],
+              ].map(([label, value]) => (
+                <div key={label}>
+                  <p className="text-[10px] text-slate-400">{label}</p>
+                  <p className="mt-0.5 font-mono text-sm font-bold text-[#0B132B]">{value}</p>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center justify-between pt-3">
+              <p className="text-[11px] text-slate-500">Analyst hours saved (7d)</p>
+              <p className="font-mono text-sm font-bold text-emerald-700">41.6 hrs</p>
+            </div>
           </div>
         </article>
       </div>
@@ -245,26 +255,26 @@ function ReplayRing() {
   const radius = 34
   const length = 2 * Math.PI * radius
   const gap = 10
-  const validated = length * (4 / 12) - gap
-  const pending = length * (8 / 12) - gap
+  const succeeded = length * (130 / 142) - gap
+  const escalated = length * (12 / 142) - gap
   return (
     <div className="my-1 flex min-h-[110px] flex-1 flex-col items-center justify-center">
       <div className="relative aspect-square h-full max-h-64">
-        <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90 drop-shadow-sm" role="img" aria-label="12 of 12 staged fixes replayed. 4 auto-validated, 8 awaiting lead sign-off">
+        <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90 drop-shadow-sm" role="img" aria-label="91.5 percent auto-closed. 130 succeeded, 12 escalated for human-in-the-loop review">
           <circle cx="50" cy="50" r={radius} fill="white" stroke="#e8eef5" strokeWidth="11" />
-          <circle cx="50" cy="50" r={radius} fill="none" stroke="#10b981" strokeWidth="11" strokeLinecap="round" strokeDasharray={`${validated} ${length}`} />
-          <circle cx="50" cy="50" r={radius} fill="none" stroke="#4f46e5" strokeWidth="11" strokeLinecap="round" strokeDasharray={`${pending} ${length}`} strokeDashoffset={-(validated + gap)} />
+          <circle cx="50" cy="50" r={radius} fill="none" stroke="#10b981" strokeWidth="11" strokeLinecap="round" strokeDasharray={`${succeeded} ${length}`} />
+          <circle cx="50" cy="50" r={radius} fill="none" stroke="#4f46e5" strokeWidth="11" strokeLinecap="round" strokeDasharray={`${escalated} ${length}`} strokeDashoffset={-(succeeded + gap)} />
         </svg>
         <div className="absolute inset-0 grid place-items-center text-center">
           <div>
-            <span className="block font-mono text-xl font-bold tracking-tight text-[#0B132B]">12 / 12</span>
-            <span className="mt-0.5 block text-[10px] font-medium tracking-[0.14em] text-slate-400 uppercase">Replayed</span>
+            <span className="block font-mono text-2xl font-bold text-[#0B132B]">91.5%</span>
+            <span className="mt-0.5 block text-[10px] font-semibold tracking-wider text-slate-400">AUTO-CLOSED</span>
           </div>
         </div>
       </div>
-      <div className="mt-2 flex items-center gap-3 text-[10px] font-medium">
-        <span className="inline-flex items-center gap-1.5 text-emerald-700"><span className="size-1.5 rounded-full bg-emerald-500" />4 validated</span>
-        <span className="inline-flex items-center gap-1.5 text-indigo-700"><span className="size-1.5 rounded-full bg-indigo-600" />8 sign-off</span>
+      <div className="mt-2 flex items-center justify-center gap-4 text-xs">
+        <span className="inline-flex items-center gap-1.5 text-emerald-700"><span className="size-1.5 rounded-full bg-emerald-500" />130 Succeeded</span>
+        <span className="inline-flex items-center gap-1.5 text-indigo-700"><span className="size-1.5 rounded-full bg-indigo-600" />12 Escalated (HITL)</span>
       </div>
     </div>
   )
@@ -272,21 +282,21 @@ function ReplayRing() {
 
 function RibbonCard({ label, pill, pillClass, value, note, noteClass, bar, barClass, footer }) {
   return (
-    <article className="flex h-full min-w-0 flex-col justify-between rounded-2xl border border-slate-200/50 bg-[#F4F7FB] p-5">
-      <div>
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-xs font-bold tracking-wide text-slate-700">{label}</h2>
-          <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] ${pillClass}`}>{pill}</span>
-        </div>
-        <p className="mt-2">
+    <article className="flex h-full min-h-[176px] min-w-0 flex-col justify-between rounded-2xl border border-slate-200/50 bg-[#F4F7FB] p-5">
+      <div className="flex items-center justify-between gap-2 whitespace-nowrap">
+        <h2 className="text-xs font-bold whitespace-nowrap text-slate-700">{label}</h2>
+        <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] ${pillClass}`}>{pill}</span>
+      </div>
+      <div className="my-auto flex flex-col justify-center py-3">
+        <p>
           <span className="font-mono text-3xl font-bold text-[#0B132B]">{value}</span>
           <span className={`ml-2 text-xs font-medium ${noteClass}`}>{note}</span>
         </p>
-        <div className="mt-2 mb-2 h-2 overflow-hidden rounded-full bg-slate-200">
+        <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
           <div className={`h-full rounded-full ${barClass}`} style={{ width: bar }} />
         </div>
       </div>
-      <p className="text-[11px] text-slate-500">{footer}</p>
+      <p className="truncate border-t border-slate-200/50 pt-2 text-[11px] whitespace-nowrap text-slate-500">{footer}</p>
     </article>
   )
 }

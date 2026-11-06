@@ -3,11 +3,11 @@ import { usePulse } from "./PulseContext"
 import { ruleView } from "./ui"
 
 const TIERS = [
-  ["all", "All"],
-  ["low", "Low"],
-  ["medium", "Medium"],
-  ["high", "High"],
-  ["critical", "Critical"],
+  { id: "all", label: "All Levels", dot: "" },
+  { id: "critical", label: "Critical", dot: "bg-red-500" },
+  { id: "high", label: "High", dot: "bg-amber-500" },
+  { id: "medium", label: "Medium", dot: "bg-yellow-400" },
+  { id: "low", label: "Low", dot: "bg-slate-400" },
 ]
 
 const SEVERITY = {
@@ -56,18 +56,21 @@ export default function RemediationView() {
     <div>
       <h1 className="text-2xl font-bold text-[#0B132B]">Remediation</h1>
       <p className="mt-1 text-sm text-slate-500">Detection, schema, and coverage issues across every severity tier.</p>
-      <div className="mt-4 flex flex-wrap gap-2.5">
-        {TIERS.map(([id, label]) => {
-          const active = pulse.remediationTier === id
+      <div className="mt-4 inline-flex w-fit items-center gap-0.5 rounded-xl border border-slate-200/60 bg-slate-100/80 p-1">
+        {TIERS.map((tier) => {
+          const active = pulse.remediationTier === tier.id
           return (
             <button
-              key={id}
+              key={tier.id}
               type="button"
               aria-pressed={active}
-              onClick={() => pulse.dispatch({ type: "remediation-tier", tier: id })}
-              className={active ? "rounded-full bg-blue-100/80 px-4 py-1.5 text-xs font-semibold text-blue-700" : "rounded-full border border-slate-200/50 bg-slate-50 px-3.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100"}
+              onClick={() => pulse.dispatch({ type: "remediation-tier", tier: tier.id })}
+              className={active
+                ? "flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-slate-900 shadow-sm transition"
+                : "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-500 transition hover:text-slate-900"}
             >
-              {label} {count(id)}
+              {tier.dot ? <span className={`h-2 w-2 rounded-full ${tier.dot}`} /> : null}
+              {tier.label} ({count(tier.id)})
             </button>
           )
         })}
