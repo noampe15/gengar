@@ -261,11 +261,11 @@ function NoiseHistogram() {
                       <span className="block text-white/55">−{cut}% noise</span>
                     </span>
                     <div
-                      className="w-3.5 rounded-t-md rounded-b-none bg-slate-200 transition hover:bg-slate-300"
+                      className="w-4 rounded-t-md rounded-b-none bg-slate-200 transition hover:bg-slate-300"
                       style={{ height: `${(entry.raw / scale) * 100}%` }}
                     />
                     <div
-                      className="w-3.5 rounded-t-md rounded-b-none bg-indigo-600"
+                      className="w-4 rounded-t-md rounded-b-none bg-indigo-600"
                       style={{ height: `${(entry.filtered / scale) * 100}%` }}
                     />
                   </div>
